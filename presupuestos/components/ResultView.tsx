@@ -209,9 +209,9 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
           </div>
 
           {/* Footer Watermark */}
-          <div className="mt-auto pt-4 text-center pb-2">
-            <h1 className="text-4xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
-            <p className="text-[7px] text-gray-400 mt-1 uppercase tracking-widest font-bold">SantiSystems v2.0 - Solo rellenar datos indicados</p>
+          <div className="mt-auto pt-4 text-center pb-2 flex flex-col items-center">
+            <h1 className="text-3xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
+            <p className="text-[8px] text-gray-300 uppercase tracking-widest font-bold mt-1">SantiSystems</p>
           </div>
         </div>
       </div>

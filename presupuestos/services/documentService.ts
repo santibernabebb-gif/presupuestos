@@ -129,7 +129,10 @@ export const generateDocx = async (data: BudgetData): Promise<Blob> => {
         new Paragraph({
           spacing: { before: 800 },
           alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: "PRESUPUESTO - UNA SOLA PÁGINA", bold: true, size: 36, color: "E0F2FE", italics: true })],
+          children: [
+            new TextRun({ text: "PRESUPUESTO", bold: true, size: 36, color: "E0F2FE", italics: true }),
+            new TextRun({ text: "\nSantiSystems", bold: true, size: 12, color: "D1D5DB" })
+          ],
         }),
       ],
     }],
