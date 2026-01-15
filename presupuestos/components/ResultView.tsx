@@ -210,7 +210,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
               </div>
             </div>
 
-            {/* Tabla Principal */}
+            {/* Tabla Principal - DINÁMICA: SIN FILAS VACÍAS */}
             <div className="flex-grow mb-6">
               <table className="w-full border-collapse border-2 border-slate-900 text-[11px]">
                 <thead>
@@ -228,15 +228,6 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
                       <td className="border-2 border-slate-900 p-3 text-center font-black">{line.units || ''}</td>
                       <td className="border-2 border-slate-900 p-3 text-right font-black">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
                       <td className="border-2 border-slate-900 p-3 text-right font-black bg-slate-100/30">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
-                    </tr>
-                  ))}
-                  {/* Filas de relleno estético */}
-                  {data.lines.length < 10 && Array.from({length: 10 - data.lines.length}).map((_, i) => (
-                    <tr key={`empty-${i}`} className="h-9">
-                      <td className="border-2 border-slate-900 p-3"></td>
-                      <td className="border-2 border-slate-900 p-3"></td>
-                      <td className="border-2 border-slate-900 p-3"></td>
-                      <td className="border-2 border-slate-900 p-3 bg-slate-100/30"></td>
                     </tr>
                   ))}
                 </tbody>
