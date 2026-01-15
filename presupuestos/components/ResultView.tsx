@@ -16,14 +16,16 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
   const containerRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Lógica para reescalar el presupuesto y que quepa en pantalla
+  // Calcula el factor de escala para que el A4 quepa en el ancho de la pantalla
   useEffect(() => {
     const updateScale = () => {
-      if (containerRef.current && previewRef.current) {
-        const containerWidth = containerRef.current.offsetWidth - 32; // padding
-        const targetWidth = 794; // Ancho aproximado de 210mm en px (A4)
-        if (containerWidth < targetWidth) {
-          setScale(containerWidth / targetWidth);
+      if (containerRef.current) {
+        const padding = window.innerWidth < 768 ? 20 : 64;
+        const availableWidth = containerRef.current.offsetWidth - padding;
+        const a4WidthPx = 794; // Ancho estándar de A4 en píxeles a 96dpi (210mm)
+        
+        if (availableWidth < a4WidthPx) {
+          setScale(availableWidth / a4WidthPx);
         } else {
           setScale(1);
         }
@@ -59,6 +61,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
     const element = document.getElementById('template-preview');
     if (!element) return;
     
+    // Para el PDF, queremos la escala 1:1 original del elemento DOM
     const opt = {
       margin: 0,
       filename: `Presupuesto_${data.budgetNumber}_${data.client.replace(/\s/g, '_')}.pdf`,
@@ -89,23 +92,23 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-2xl shadow-2xl mt-6 border border-gray-100 relative">
-      {/* Modal de Confirmación */}
+    <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-3xl shadow-2xl mt-6 border border-gray-100 relative overflow-hidden">
+      {/* Modal Success */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in duration-300">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl animate-in zoom-in duration-300">
             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-2">Archivo Descargado</h3>
-            <p className="text-gray-500 mb-8 font-medium">El presupuesto se ha guardado correctamente en tu dispositivo.</p>
+            <h3 className="text-2xl font-black text-gray-900 mb-2">LISTO</h3>
+            <p className="text-gray-500 mb-8 font-medium">El presupuesto se ha guardado en tu dispositivo.</p>
             <button 
               onClick={() => setShowModal(false)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition-all shadow-lg active:scale-95"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95"
             >
-              ENTENDIDO
+              CERRAR
             </button>
           </div>
         </div>
@@ -113,154 +116,179 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-6">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Vista Previa</h2>
-          <p className="text-gray-500 text-sm italic uppercase tracking-widest font-bold">Revisa los datos antes de exportar</p>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase italic">Vista del Documento</h2>
+          <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Plantilla: Lalo Quilis Oficial</p>
         </div>
         <div className="flex space-x-3">
           <button 
             onClick={onReset}
-            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 font-bold transition flex items-center space-x-2"
+            className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-black transition flex items-center space-x-2 text-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span>NUEVA CAPTURA</span>
+            <span>NUEVA FOTO</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
         <button
           onClick={handleDownloadDocx}
-          className="group relative flex items-center justify-center space-x-3 bg-blue-600 text-white py-4 px-6 rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200"
+          className="group flex items-center justify-center space-x-3 bg-slate-800 text-white py-4 px-6 rounded-2xl hover:bg-slate-900 transition-all shadow-xl active:scale-95"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <span className="font-black text-lg uppercase">Generar Word (.docx)</span>
+          <span className="font-black text-base uppercase">Bajar Word (.docx)</span>
         </button>
         <button
           onClick={() => handleDownloadPdf(false)}
-          className="flex items-center justify-center space-x-3 bg-red-500 text-white py-4 px-6 rounded-xl hover:bg-red-600 transition-all shadow-lg hover:shadow-red-200"
+          className="flex items-center justify-center space-x-3 bg-blue-600 text-white py-4 px-6 rounded-2xl hover:bg-blue-700 transition-all shadow-xl active:scale-95"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
-          <span className="font-black text-lg uppercase">Descargar PDF</span>
+          <span className="font-black text-base uppercase">Descargar PDF</span>
         </button>
       </div>
 
-      {/* SACRED TEMPLATE PREVIEW CON ESCALADO DINÁMICO */}
+      {/* ÁREA DE PREVISUALIZACIÓN CON ZOOM AUTOMÁTICO */}
       <div 
         ref={containerRef}
-        className="bg-gray-200 p-4 md:p-8 rounded-xl shadow-inner flex justify-center items-start overflow-hidden"
-        style={{ minHeight: scale * 1122 }} // Altura proporcional a A4 (297mm aprox 1122px)
+        className="bg-zinc-100 p-2 sm:p-6 md:p-10 rounded-3xl shadow-inner flex justify-center items-start overflow-hidden border border-gray-200"
+        style={{ minHeight: `${scale * 1122}px` }} 
       >
         <div 
           style={{ 
             transform: `scale(${scale})`, 
             transformOrigin: 'top center',
-            transition: 'transform 0.3s ease-out'
+            transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
           }}
         >
           <div 
             id="template-preview" 
             ref={previewRef}
-            className="bg-white shadow-2xl p-10 md:p-12 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-[13px] text-black font-sans relative flex flex-col box-border overflow-hidden"
+            className="bg-white shadow-2xl p-10 md:p-14 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-[13px] text-black font-sans relative flex flex-col box-border overflow-hidden"
             style={{ lineHeight: '1.2' }}
           >
-            {/* Top Watermark */}
-            <div className="text-center mb-4">
-              <h1 className="text-4xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
+            {/* Cabecera Superior - Marca de Agua Fondo */}
+            <div className="absolute top-10 left-0 right-0 text-center pointer-events-none">
+              <h1 className="text-[60px] font-black opacity-[0.03] text-blue-900 tracking-[0.3em] uppercase italic">PRESUPUESTO</h1>
             </div>
 
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex flex-col space-y-0.5">
-                <h2 className="text-lg font-extrabold uppercase tracking-tight">Eduardo Quilis Llorens</h2>
-                <p className="text-[11px]">C/ Cervantes 41 • Onil • 03430</p>
-                <p className="text-[11px]">quilislalo@gmail.com</p>
-                <p className="text-[11px] font-bold">620-944-229 • NIF: 21667776-M</p>
+            <div className="flex justify-between items-start mb-10 relative z-10">
+              <div className="flex flex-col space-y-1">
+                <h2 className="text-xl font-black uppercase tracking-tighter text-gray-900">Eduardo Quilis Llorens</h2>
+                <div className="text-[11px] font-bold text-gray-600 space-y-0.5">
+                  <p>C/ Cervantes 41 • Onil • 03430</p>
+                  <p>quilislalo@gmail.com</p>
+                  <p className="text-gray-900">Tel: 620-944-229 • NIF: 21667776-M</p>
+                </div>
               </div>
               
-              <div className="flex flex-col items-center">
-                <div className="bg-slate-800 text-white p-1.5 rounded flex flex-col items-center w-36">
-                  <div className="flex items-center space-x-1.5 w-full justify-center">
-                    <div className="text-base font-black leading-tight">LALO<br/>QUILIS</div>
-                    <div className="h-6 w-0.5 flex flex-col justify-between">
-                        <div className="h-1/3 bg-blue-400"></div>
-                        <div className="h-1/3 bg-pink-500"></div>
-                        <div className="h-1/3 bg-yellow-400"></div>
+              <div className="flex flex-col items-end">
+                <div className="bg-slate-900 text-white p-2 rounded-xl flex flex-col items-center w-40 shadow-lg">
+                  <div className="flex items-center space-x-2 w-full justify-center">
+                    <div className="text-lg font-black leading-tight tracking-tighter">LALO<br/>QUILIS</div>
+                    <div className="h-8 w-1 flex flex-col justify-between">
+                        <div className="h-1/3 bg-sky-400"></div>
+                        <div className="h-1/3 bg-rose-500"></div>
+                        <div className="h-1/3 bg-amber-400"></div>
                     </div>
                   </div>
-                  <div className="text-[6px] mt-0.5 border-t border-white/20 pt-0.5 tracking-widest uppercase font-bold">Pinturas y Decoración</div>
+                  <div className="text-[7px] mt-1 border-t border-white/20 pt-1 tracking-[0.2em] uppercase font-black text-blue-300">Pinturas y Decoración</div>
                 </div>
+                <div className="mt-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Doc. #{data.budgetNumber.split('-').pop()}</div>
               </div>
             </div>
             
-            <div className="mb-4 space-y-0.5 bg-gray-50 p-2 border border-gray-200 rounded">
-              <p className="text-[12px]"><strong>Cliente:</strong> <span className="font-bold underline ml-2 uppercase">{data.client}</span></p>
-              <p className="text-[12px]"><strong>Fecha:</strong> <span className="font-bold underline ml-2">{data.date}</span></p>
+            <div className="mb-6 bg-slate-50 p-4 border-[1.5px] border-slate-200 rounded-xl flex justify-between items-center">
+              <div>
+                <p className="text-[10px] uppercase font-black text-slate-400 mb-0.5">Cliente</p>
+                <p className="text-[14px] font-black uppercase text-slate-900 underline decoration-slate-300 decoration-2 underline-offset-4">{data.client}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] uppercase font-black text-slate-400 mb-0.5">Fecha</p>
+                <p className="text-[14px] font-black text-slate-900">{data.date}</p>
+              </div>
             </div>
 
             {/* Tabla de Partidas */}
-            <div className="flex-grow overflow-hidden mb-4 max-h-[160mm]">
-              <table className="w-full border-collapse border-[1.5px] border-black text-[10px]">
+            <div className="flex-grow overflow-hidden mb-6 max-h-[165mm]">
+              <table className="w-full border-collapse border-2 border-slate-900 text-[11px]">
                 <thead>
-                  <tr className="bg-slate-700 text-white uppercase text-[9px] font-bold">
-                    <th className="border border-black p-1.5 text-left w-[55%]">DESCRIPCION</th>
-                    <th className="border border-black p-1.5 text-center w-[15%]">UNIDADES</th>
-                    <th className="border border-black p-1.5 text-center w-[15%]">P. Unit. (€)</th>
-                    <th className="border border-black p-1.5 text-center w-[15%]">Precio (€)</th>
+                  <tr className="bg-slate-800 text-white uppercase text-[10px] font-black tracking-wider">
+                    <th className="border-2 border-slate-900 p-3 text-left w-[55%]">Descripción del Trabajo</th>
+                    <th className="border-2 border-slate-900 p-3 text-center w-[12%]">Uds.</th>
+                    <th className="border-2 border-slate-900 p-3 text-center w-[15%]">P. Unit (€)</th>
+                    <th className="border-2 border-slate-900 p-3 text-center w-[18%]">Total (€)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.lines.map((line, i) => (
-                    <tr key={i} className="leading-tight">
-                      <td className="border border-black p-1.5 font-bold uppercase">{line.description}</td>
-                      <td className="border border-black p-1.5 text-center font-bold">{line.units || ''}</td>
-                      <td className="border border-black p-1.5 text-right font-bold">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
-                      <td className="border border-black p-1.5 text-right font-bold">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
+                    <tr key={i} className={`leading-tight ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                      <td className="border-2 border-slate-900 p-3 font-bold uppercase text-slate-800">{line.description}</td>
+                      <td className="border-2 border-slate-900 p-3 text-center font-black">{line.units || ''}</td>
+                      <td className="border-2 border-slate-900 p-3 text-right font-black">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
+                      <td className="border-2 border-slate-900 p-3 text-right font-black bg-slate-100/50">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
+                    </tr>
+                  ))}
+                  {/* Filas vacías para rellenar si hay pocos items y mantener estética */}
+                  {data.lines.length < 8 && Array.from({length: 8 - data.lines.length}).map((_, i) => (
+                    <tr key={`empty-${i}`} className="h-8">
+                      <td className="border-2 border-slate-900 p-3"></td>
+                      <td className="border-2 border-slate-900 p-3"></td>
+                      <td className="border-2 border-slate-900 p-3"></td>
+                      <td className="border-2 border-slate-900 p-3 bg-slate-100/50"></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {/* Totales */}
-            <div className="flex justify-end mb-4">
-              <div className="w-48 space-y-1">
-                <div className="flex border-[1.5px] border-black">
-                  <div className="w-1/2 p-1 font-bold bg-gray-50 text-[10px]">TOTAL €</div>
-                  <div className="w-1/2 p-1 font-bold text-right border-l border-black text-[10px]">{data.subtotal.toFixed(2)}€</div>
+            {/* Bloque de Totales */}
+            <div className="flex justify-end mb-8">
+              <div className="w-64 space-y-0 shadow-sm">
+                <div className="flex border-2 border-slate-900 border-b-0">
+                  <div className="w-1/2 p-2 font-black bg-slate-50 text-[10px] uppercase">Base Imponible</div>
+                  <div className="w-1/2 p-2 font-black text-right border-l-2 border-slate-900 text-[12px]">{data.subtotal.toFixed(2)}€</div>
                 </div>
                 
-                <div className="space-y-0">
-                  <div className="flex border-[1.5px] border-black border-b-0">
-                    <div className="w-1/2 p-1 font-bold text-[10px]">IVA 21%</div>
-                    <div className="w-1/2 p-1 font-bold text-right border-l border-black text-[10px]">{data.iva.toFixed(2)}€</div>
-                  </div>
-                  <div className="flex border-[1.5px] border-black bg-slate-100">
-                    <div className="w-1/2 p-1 font-black uppercase text-[11px]">TOTAL</div>
-                    <div className="w-1/2 p-1 font-black text-right border-l border-black text-[12px]">{data.total.toFixed(2)}€</div>
-                  </div>
+                <div className="flex border-2 border-slate-900 border-b-0">
+                  <div className="w-1/2 p-2 font-black bg-slate-50 text-[10px] uppercase text-slate-500">I.V.A. (21%)</div>
+                  <div className="w-1/2 p-2 font-black text-right border-l-2 border-slate-900 text-[12px] text-slate-500">{data.iva.toFixed(2)}€</div>
+                </div>
+                
+                <div className="flex border-2 border-slate-900 bg-slate-900 text-white transform scale-105 shadow-xl">
+                  <div className="w-1/2 p-3 font-black uppercase text-[12px] tracking-widest">Total Presupuesto</div>
+                  <div className="w-1/2 p-3 font-black text-right border-l-2 border-white/20 text-[16px]">{data.total.toFixed(2)}€</div>
                 </div>
               </div>
             </div>
 
-            {/* Importante */}
-            <div className="mt-2 border-t border-black pt-3">
-              <h3 className="font-bold italic underline mb-1.5 text-[11px]">IMPORTANTE:</h3>
-              <ul className="list-disc pl-5 space-y-0.5 text-[9px] font-bold">
-                <li>Cualquier imprevisto o problema surgido durante la realización de la obra se facturará aparte.</li>
-                <li>Los cambios necesarios debido al estado de las superficies se presupuestarán y cobrarán por separado.</li>
-                <li>El 50% del valor del presupuesto se abonará antes de iniciar la obra.</li>
+            {/* Condiciones Legales */}
+            <div className="mt-auto border-t-2 border-slate-900 pt-5">
+              <h3 className="font-black italic underline mb-2 text-[12px] text-slate-900 uppercase tracking-tighter">Condiciones y Aceptación:</h3>
+              <ul className="space-y-1 text-[10px] font-bold text-slate-700">
+                <li className="flex items-start">
+                  <span className="mr-2 text-slate-900">•</span>
+                  <span>Cualquier imprevisto o problema surgido durante la realización de la obra se facturará aparte del presente presupuesto.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2 text-slate-900">•</span>
+                  <span>Los cambios necesarios debido al estado de las superficies se presupuestarán y cobrarán por separado.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2 text-slate-900">•</span>
+                  <span>El 50% del valor total del presupuesto se abonará antes del inicio de los trabajos de pintura.</span>
+                </li>
               </ul>
             </div>
 
-            {/* Footer Watermark */}
-            <div className="mt-auto pt-4 text-center pb-2 flex flex-col items-center">
-              <h1 className="text-3xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
-              <p className="text-[8px] text-gray-300 uppercase tracking-widest font-bold mt-1">SantiSystems</p>
+            {/* Pie de página discreto */}
+            <div className="pt-6 text-center border-t border-slate-100 mt-4">
+              <p className="text-[9px] text-slate-300 uppercase tracking-[0.4em] font-black">SantiSystems</p>
             </div>
           </div>
         </div>
