@@ -28,23 +28,24 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
     const opt = {
       margin: 0,
       filename: `Presupuesto_${data.budgetNumber}_${data.client.replace(/\s/g, '_')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg', quality: 1.0 },
       html2canvas: { 
         scale: 2, 
         useCORS: true, 
         letterRendering: true,
         scrollY: 0,
-        windowWidth: 794, // Aproximado para 210mm a 96dpi
+        windowWidth: 794,
+        logging: false
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
       pagebreak: { mode: 'avoid-all' }
     };
     
     // @ts-ignore
     window.html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
-      // Forzar que solo tenga una página si por alguna razón jsPDF crea dos
       const totalPages = pdf.internal.getNumberOfPages();
       if (totalPages > 1) {
+        // Borrar páginas adicionales para garantizar una única página
         for (let i = totalPages; i > 1; i--) {
           pdf.deletePage(i);
         }
@@ -80,7 +81,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-6">
         <div>
           <h2 className="text-3xl font-black text-gray-900 tracking-tight">Presupuesto Finalizado</h2>
-          <p className="text-gray-500 text-sm italic">Siguiendo estrictamente la Plantilla Sagrada (1 sola página).</p>
+          <p className="text-gray-500 text-sm italic uppercase tracking-widest">Estrictamente 1 sola página A4</p>
         </div>
         <div className="flex space-x-3">
           <button 
@@ -100,7 +101,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <span className="font-black text-lg uppercase">Generar Word Lalo (.docx)</span>
+          <span className="font-black text-lg uppercase">Generar Word (.docx)</span>
         </button>
         <button
           onClick={handleDownloadPdf}
@@ -117,7 +118,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
       <div className="bg-gray-300 p-2 md:p-8 rounded-xl overflow-hidden shadow-inner flex justify-center overflow-x-auto">
         <div 
           id="template-preview" 
-          className="bg-white shadow-2xl p-10 md:p-12 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-[13px] text-black font-sans relative overflow-hidden flex flex-col box-border"
+          className="bg-white shadow-2xl p-10 md:p-12 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-[13px] text-black font-sans relative flex flex-col box-border overflow-hidden"
           style={{ lineHeight: '1.2', pageBreakInside: 'avoid' }}
         >
           {/* Top Watermark */}
@@ -154,8 +155,8 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
           </div>
 
           {/* Tabla de Partidas */}
-          <div className="flex-grow overflow-hidden mb-4">
-            <table className="w-full border-collapse border-[1.5px] border-black text-[11px]">
+          <div className="flex-grow overflow-hidden mb-4 max-h-[140mm]">
+            <table className="w-full border-collapse border-[1.5px] border-black text-[10px]">
               <thead>
                 <tr className="bg-slate-700 text-white uppercase text-[9px] font-bold">
                   <th className="border border-black p-1.5 text-left w-[55%]">DESCRIPCION</th>
@@ -167,7 +168,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
               <tbody>
                 {data.lines.map((line, i) => (
                   <tr key={i} className="leading-tight">
-                    <td className="border border-black p-1.5 font-bold uppercase">{line.description}</td>
+                    <td className="border border-black p-1.5 font-bold uppercase overflow-hidden text-ellipsis">{line.description}</td>
                     <td className="border border-black p-1.5 text-center font-bold">{line.units || ''}</td>
                     <td className="border border-black p-1.5 text-right font-bold">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
                     <td className="border border-black p-1.5 text-right font-bold">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
@@ -217,7 +218,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
           {/* Footer Watermark */}
           <div className="mt-auto pt-4 text-center pb-2">
             <h1 className="text-4xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
-            <p className="text-[7px] text-gray-400 mt-1 uppercase tracking-widest font-bold">SantiSystems v2.0 - Motor Gemini Vision</p>
+            <p className="text-[7px] text-gray-400 mt-1 uppercase tracking-widest font-bold">Motor Gemini Vision v3.0 - SantiSystems</p>
           </div>
         </div>
       </div>

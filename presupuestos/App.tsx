@@ -67,6 +67,17 @@ const App: React.FC = () => {
     setError(null);
   };
 
+  const handleDeleteFromHistory = (id: string) => {
+    const newHistory = history.filter(item => item.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem('lalo_budget_history', JSON.stringify(newHistory));
+    
+    // Si el resultado actual es el que estamos borrando, resetear vista
+    if (result && history.find(h => h.id === id)?.data.budgetNumber === result.budgetNumber) {
+        setResult(null);
+    }
+  };
+
   const handleSelectFromHistory = (item: HistoryItem) => {
     setResult(item.data);
     setCapturedImage(null);
@@ -164,7 +175,11 @@ const App: React.FC = () => {
         )}
 
         {!processing && !capturedImage && (
-          <HistoryList items={history} onSelect={handleSelectFromHistory} />
+          <HistoryList 
+            items={history} 
+            onSelect={handleSelectFromHistory} 
+            onDelete={handleDeleteFromHistory}
+          />
         )}
       </main>
 
