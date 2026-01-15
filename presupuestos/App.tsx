@@ -14,7 +14,6 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [autoDownloadRequested, setAutoDownloadRequested] = useState(false);
 
-  // Load history from local storage on mount
   useEffect(() => {
     const saved = localStorage.getItem('lalo_budget_history');
     if (saved) {
@@ -40,7 +39,6 @@ const App: React.FC = () => {
       const data = await extractBudgetData(capturedImage);
       setResult(data);
       
-      // Save to history
       const newItem: HistoryItem = {
         id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
@@ -49,15 +47,13 @@ const App: React.FC = () => {
         data: data
       };
       
-      const newHistory = [newItem, ...history].slice(0, 20); // Keep last 20
+      const newHistory = [newItem, ...history].slice(0, 20);
       setHistory(newHistory);
       localStorage.setItem('lalo_budget_history', JSON.stringify(newHistory));
       
       setCapturedImage(null);
-      setAutoDownloadRequested(false);
-    } catch (err) {
-      console.error(err);
-      setError("Error al procesar la imagen con IA. Inténtalo de nuevo.");
+    } catch (err: any) {
+      setError(err.message || "Error desconocido al procesar.");
     } finally {
       setProcessing(false);
     }
@@ -67,17 +63,12 @@ const App: React.FC = () => {
     setCapturedImage(null);
     setResult(null);
     setError(null);
-    setAutoDownloadRequested(false);
   };
 
   const handleDeleteFromHistory = (id: string) => {
     const newHistory = history.filter(item => item.id !== id);
     setHistory(newHistory);
     localStorage.setItem('lalo_budget_history', JSON.stringify(newHistory));
-    
-    if (result && history.find(h => h.id === id)?.data.budgetNumber === result.budgetNumber) {
-        setResult(null);
-    }
   };
 
   const handleSelectFromHistory = (item: HistoryItem, autoDownload: boolean = false) => {
@@ -89,7 +80,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 mb-8 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -99,77 +89,76 @@ const App: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-none">SantiSystems-Presupuestos</h1>
-              <p className="text-xs text-gray-500 mt-1 uppercase tracking-tighter">Budget AI Engine</p>
+              <h1 className="text-xl font-bold text-gray-900 leading-none tracking-tight">Lalo Quilis App</h1>
+              <p className="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-widest">Power by SantiSystems</p>
             </div>
           </div>
-          {result && (
+          { (result || capturedImage) && (
             <button 
               onClick={handleReset}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium transition"
+              className="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-xl text-xs font-black transition uppercase tracking-widest"
             >
-              Nuevo
+              Cancelar
             </button>
           )}
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4">
+        {error && (
+          <div className="bg-red-600 text-white p-6 rounded-3xl mb-8 shadow-2xl animate-bounce">
+            <div className="flex items-center space-x-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-black text-lg">HUBO UN PROBLEMA</p>
+                <p className="font-medium opacity-90">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {!result && !capturedImage && !processing && (
           <div className="text-center py-12">
-            <div className="mb-6 inline-block p-4 bg-blue-50 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Captura un presupuesto</h2>
-            <p className="text-gray-600 mb-8 max-w-sm mx-auto">Toma una foto clara del papel manuscrito para extraer los datos automáticamente.</p>
+            <h2 className="text-3xl font-black text-gray-900 mb-4 uppercase italic">¿Nuevo presupuesto?</h2>
+            <p className="text-gray-500 mb-10 max-w-sm mx-auto font-medium">Enfoca bien el papel y asegúrate de que haya luz suficiente.</p>
             <CameraCapture onCapture={handleCapture} />
           </div>
         )}
 
         {capturedImage && !processing && (
           <div className="flex flex-col items-center space-y-6 py-8">
-            <div className="w-full max-w-md bg-white p-2 rounded-2xl shadow-xl overflow-hidden">
-              <img src={capturedImage} alt="Capture preview" className="w-full h-auto rounded-xl" />
+            <div className="w-full max-w-md bg-white p-3 rounded-[2rem] shadow-2xl overflow-hidden border-4 border-white">
+              <img src={capturedImage} alt="Preview" className="w-full h-auto rounded-2xl" />
             </div>
             <div className="flex space-x-4 w-full max-w-md">
               <button
                 onClick={() => setCapturedImage(null)}
-                className="flex-1 bg-white border border-gray-300 text-gray-700 font-bold py-4 rounded-xl hover:bg-gray-50 transition"
+                className="flex-1 bg-white text-gray-900 font-black py-5 rounded-2xl border-2 border-gray-200 hover:bg-gray-50 transition uppercase text-sm"
               >
-                Reintentar
+                Repetir
               </button>
               <button
                 onClick={handleProcess}
-                className="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95"
+                className="flex-1 bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-blue-700 transition transform active:scale-95 uppercase text-sm tracking-widest"
               >
-                Procesar con IA
+                Enviar a IA
               </button>
             </div>
           </div>
         )}
 
         {processing && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-            <p className="text-lg font-bold text-gray-800 animate-pulse">Analizando presupuesto...</p>
-            <p className="text-gray-500 text-sm mt-2">Estamos leyendo la letra y calculando totales</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 my-6 rounded shadow-sm">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700 font-medium">{error}</p>
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-24 w-24 border-8 border-gray-100 border-t-blue-600 mb-8"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="h-4 w-4 bg-blue-600 rounded-full animate-ping"></div>
               </div>
             </div>
+            <p className="text-2xl font-black text-gray-900 animate-pulse uppercase italic tracking-tighter">Leyendo presupuesto...</p>
+            <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.3em]">No cierres la aplicación</p>
           </div>
         )}
 
@@ -190,11 +179,6 @@ const App: React.FC = () => {
           />
         )}
       </main>
-
-      {/* Footer info */}
-      <footer className="mt-20 border-t border-gray-200 pt-8 text-center text-gray-400 text-xs">
-        <p>© {new Date().getFullYear()} SantiSystems-Presupuestos - Motor de Visión Gemini Pro</p>
-      </footer>
     </div>
   );
 };
