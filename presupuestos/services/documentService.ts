@@ -125,11 +125,6 @@ export const generateDocx = async (data: BudgetData): Promise<Blob> => {
           children: [new TextRun({ text: "• El 50% del valor del presupuesto se abonará antes de iniciar la obra.", size: 14, bold: true })],
         }),
 
-        ...(data.notes ? [
-          new Paragraph({ spacing: { before: 300 } }),
-          new Paragraph({ children: [new TextRun({ text: `NOTAS: ${data.notes}`, bold: true, italics: true, color: "FF0000", size: 14 })] })
-        ] : []),
-
         // Bottom Watermark representation
         new Paragraph({
           spacing: { before: 800 },

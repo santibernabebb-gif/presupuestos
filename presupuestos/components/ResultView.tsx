@@ -45,7 +45,6 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
     window.html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
       const totalPages = pdf.internal.getNumberOfPages();
       if (totalPages > 1) {
-        // Borrar páginas adicionales para garantizar una única página
         for (let i = totalPages; i > 1; i--) {
           pdf.deletePage(i);
         }
@@ -155,7 +154,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
           </div>
 
           {/* Tabla de Partidas */}
-          <div className="flex-grow overflow-hidden mb-4 max-h-[140mm]">
+          <div className="flex-grow overflow-hidden mb-4 max-h-[160mm]">
             <table className="w-full border-collapse border-[1.5px] border-black text-[10px]">
               <thead>
                 <tr className="bg-slate-700 text-white uppercase text-[9px] font-bold">
@@ -168,7 +167,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
               <tbody>
                 {data.lines.map((line, i) => (
                   <tr key={i} className="leading-tight">
-                    <td className="border border-black p-1.5 font-bold uppercase overflow-hidden text-ellipsis">{line.description}</td>
+                    <td className="border border-black p-1.5 font-bold uppercase">{line.description}</td>
                     <td className="border border-black p-1.5 text-center font-bold">{line.units || ''}</td>
                     <td className="border border-black p-1.5 text-right font-bold">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
                     <td className="border border-black p-1.5 text-right font-bold">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
@@ -209,16 +208,10 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
             </ul>
           </div>
 
-          {data.notes && (
-            <div className="mt-2 p-1.5 border border-red-200 bg-red-50 rounded">
-              <p className="text-[8px] text-red-700 font-bold italic uppercase">{data.notes}</p>
-            </div>
-          )}
-
           {/* Footer Watermark */}
           <div className="mt-auto pt-4 text-center pb-2">
             <h1 className="text-4xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
-            <p className="text-[7px] text-gray-400 mt-1 uppercase tracking-widest font-bold">Motor Gemini Vision v3.0 - SantiSystems</p>
+            <p className="text-[7px] text-gray-400 mt-1 uppercase tracking-widest font-bold">SantiSystems v2.0 - Solo rellenar datos indicados</p>
           </div>
         </div>
       </div>

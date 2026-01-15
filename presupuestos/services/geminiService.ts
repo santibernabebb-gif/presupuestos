@@ -20,8 +20,7 @@ const budgetSchema = {
         },
         required: ["description"]
       }
-    },
-    notes: { type: Type.STRING, description: "Notas sobre datos ilegibles o discrepancias" }
+    }
   },
   required: ["client", "date", "lines"]
 };
@@ -37,8 +36,8 @@ export const extractBudgetData = async (base64Image: string): Promise<BudgetData
     1. Lee el Cliente y la Fecha. Si no hay fecha, usa la de hoy: ${new Date().toLocaleDateString('es-ES')}.
     2. Extrae cada partida de trabajo (Descripción, Unidades, Precio Unitario).
     3. Si una línea no tiene números, deja unidades y precio unitario vacíos.
-    4. Si algo es ilegible, deja el espacio en blanco y añade una nota al final: "*Hay datos ilegibles en la foto en la línea X*".
-    5. Corrige faltas de ortografía (ej. 'guita' -> 'gota').
+    4. NO añadidas NINGUNA nota ni aviso sobre si la letra es ilegible o si faltan datos. Limítate a extraer lo que veas.
+    5. Corrige faltas de ortografía básicas de pintura (ej. 'guita' -> 'gota').
     6. REGLA DE ORDEN: Las partidas que NO tengan números deben aparecer PRIMERO. Las que TENGAN números van ABAJO.
     
     Devuelve solo el JSON.
@@ -96,7 +95,6 @@ export const extractBudgetData = async (base64Image: string): Promise<BudgetData
     lines: processedLines,
     subtotal,
     iva,
-    total,
-    notes: rawData.notes
+    total
   };
 };

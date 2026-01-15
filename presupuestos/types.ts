@@ -14,7 +14,6 @@ export interface BudgetData {
   subtotal: number;
   iva: number;
   total: number;
-  notes?: string;
 }
 
 export interface HistoryItem {
