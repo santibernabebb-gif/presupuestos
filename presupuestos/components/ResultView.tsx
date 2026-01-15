@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BudgetData } from '../types';
 import { generateDocx, downloadBlob } from '../services/documentService';
 
@@ -12,10 +12,31 @@ interface Props {
 
 const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownloadComplete }) => {
   const [showModal, setShowModal] = useState(false);
+  const [scale, setScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // Lógica para reescalar el presupuesto y que quepa en pantalla
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current && previewRef.current) {
+        const containerWidth = containerRef.current.offsetWidth - 32; // padding
+        const targetWidth = 794; // Ancho aproximado de 210mm en px (A4)
+        if (containerWidth < targetWidth) {
+          setScale(containerWidth / targetWidth);
+        } else {
+          setScale(1);
+        }
+      }
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [data]);
 
   useEffect(() => {
     if (autoDownload) {
-      // Pequeño retardo para asegurar que el DOM está listo
       const timer = setTimeout(() => {
         handleDownloadPdf(true);
         if (onAutoDownloadComplete) onAutoDownloadComplete();
@@ -92,8 +113,8 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-6">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Presupuesto</h2>
-          <p className="text-gray-500 text-sm italic uppercase tracking-widest font-bold">Documento Oficial de Trabajo</p>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Vista Previa</h2>
+          <p className="text-gray-500 text-sm italic uppercase tracking-widest font-bold">Revisa los datos antes de exportar</p>
         </div>
         <div className="flex space-x-3">
           <button 
@@ -129,105 +150,118 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
         </button>
       </div>
 
-      {/* SACRED TEMPLATE PREVIEW - ESTRICTAMENTE 1 PÁGINA */}
-      <div className="bg-gray-300 p-2 md:p-8 rounded-xl overflow-hidden shadow-inner flex justify-center overflow-x-auto">
+      {/* SACRED TEMPLATE PREVIEW CON ESCALADO DINÁMICO */}
+      <div 
+        ref={containerRef}
+        className="bg-gray-200 p-4 md:p-8 rounded-xl shadow-inner flex justify-center items-start overflow-hidden"
+        style={{ minHeight: scale * 1122 }} // Altura proporcional a A4 (297mm aprox 1122px)
+      >
         <div 
-          id="template-preview" 
-          className="bg-white shadow-2xl p-10 md:p-12 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-[13px] text-black font-sans relative flex flex-col box-border overflow-hidden"
-          style={{ lineHeight: '1.2', pageBreakInside: 'avoid' }}
+          style={{ 
+            transform: `scale(${scale})`, 
+            transformOrigin: 'top center',
+            transition: 'transform 0.3s ease-out'
+          }}
         >
-          {/* Top Watermark */}
-          <div className="text-center mb-4">
-            <h1 className="text-4xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
-          </div>
-
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex flex-col space-y-0.5">
-              <h2 className="text-lg font-extrabold uppercase tracking-tight">Eduardo Quilis Llorens</h2>
-              <p className="text-[11px]">C/ Cervantes 41 • Onil • 03430</p>
-              <p className="text-[11px]">quilislalo@gmail.com</p>
-              <p className="text-[11px] font-bold">620-944-229 • NIF: 21667776-M</p>
+          <div 
+            id="template-preview" 
+            ref={previewRef}
+            className="bg-white shadow-2xl p-10 md:p-12 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-[13px] text-black font-sans relative flex flex-col box-border overflow-hidden"
+            style={{ lineHeight: '1.2' }}
+          >
+            {/* Top Watermark */}
+            <div className="text-center mb-4">
+              <h1 className="text-4xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
             </div>
-            
-            <div className="flex flex-col items-center">
-              <div className="bg-slate-800 text-white p-1.5 rounded flex flex-col items-center w-36">
-                <div className="flex items-center space-x-1.5 w-full justify-center">
-                   <div className="text-base font-black leading-tight">LALO<br/>QUILIS</div>
-                   <div className="h-6 w-0.5 flex flex-col justify-between">
-                      <div className="h-1/3 bg-blue-400"></div>
-                      <div className="h-1/3 bg-pink-500"></div>
-                      <div className="h-1/3 bg-yellow-400"></div>
-                   </div>
-                </div>
-                <div className="text-[6px] mt-0.5 border-t border-white/20 pt-0.5 tracking-widest uppercase font-bold">Pinturas y Decoración</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mb-4 space-y-0.5 bg-gray-50 p-2 border border-gray-200 rounded">
-            <p className="text-[12px]"><strong>Cliente:</strong> <span className="font-bold underline ml-2 uppercase">{data.client}</span></p>
-            <p className="text-[12px]"><strong>Fecha:</strong> <span className="font-bold underline ml-2">{data.date}</span></p>
-          </div>
 
-          {/* Tabla de Partidas */}
-          <div className="flex-grow overflow-hidden mb-4 max-h-[160mm]">
-            <table className="w-full border-collapse border-[1.5px] border-black text-[10px]">
-              <thead>
-                <tr className="bg-slate-700 text-white uppercase text-[9px] font-bold">
-                  <th className="border border-black p-1.5 text-left w-[55%]">DESCRIPCION</th>
-                  <th className="border border-black p-1.5 text-center w-[15%]">UNIDADES</th>
-                  <th className="border border-black p-1.5 text-center w-[15%]">P. Unit. (€)</th>
-                  <th className="border border-black p-1.5 text-center w-[15%]">Precio (€)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.lines.map((line, i) => (
-                  <tr key={i} className="leading-tight">
-                    <td className="border border-black p-1.5 font-bold uppercase">{line.description}</td>
-                    <td className="border border-black p-1.5 text-center font-bold">{line.units || ''}</td>
-                    <td className="border border-black p-1.5 text-right font-bold">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
-                    <td className="border border-black p-1.5 text-right font-bold">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Totales */}
-          <div className="flex justify-end mb-4">
-            <div className="w-48 space-y-1">
-              <div className="flex border-[1.5px] border-black">
-                <div className="w-1/2 p-1 font-bold bg-gray-50 text-[10px]">TOTAL €</div>
-                <div className="w-1/2 p-1 font-bold text-right border-l border-black text-[10px]">{data.subtotal.toFixed(2)}€</div>
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex flex-col space-y-0.5">
+                <h2 className="text-lg font-extrabold uppercase tracking-tight">Eduardo Quilis Llorens</h2>
+                <p className="text-[11px]">C/ Cervantes 41 • Onil • 03430</p>
+                <p className="text-[11px]">quilislalo@gmail.com</p>
+                <p className="text-[11px] font-bold">620-944-229 • NIF: 21667776-M</p>
               </div>
               
-              <div className="space-y-0">
-                <div className="flex border-[1.5px] border-black border-b-0">
-                  <div className="w-1/2 p-1 font-bold text-[10px]">IVA 21%</div>
-                  <div className="w-1/2 p-1 font-bold text-right border-l border-black text-[10px]">{data.iva.toFixed(2)}€</div>
-                </div>
-                <div className="flex border-[1.5px] border-black bg-slate-100">
-                  <div className="w-1/2 p-1 font-black uppercase text-[11px]">TOTAL</div>
-                  <div className="w-1/2 p-1 font-black text-right border-l border-black text-[12px]">{data.total.toFixed(2)}€</div>
+              <div className="flex flex-col items-center">
+                <div className="bg-slate-800 text-white p-1.5 rounded flex flex-col items-center w-36">
+                  <div className="flex items-center space-x-1.5 w-full justify-center">
+                    <div className="text-base font-black leading-tight">LALO<br/>QUILIS</div>
+                    <div className="h-6 w-0.5 flex flex-col justify-between">
+                        <div className="h-1/3 bg-blue-400"></div>
+                        <div className="h-1/3 bg-pink-500"></div>
+                        <div className="h-1/3 bg-yellow-400"></div>
+                    </div>
+                  </div>
+                  <div className="text-[6px] mt-0.5 border-t border-white/20 pt-0.5 tracking-widest uppercase font-bold">Pinturas y Decoración</div>
                 </div>
               </div>
             </div>
-          </div>
+            
+            <div className="mb-4 space-y-0.5 bg-gray-50 p-2 border border-gray-200 rounded">
+              <p className="text-[12px]"><strong>Cliente:</strong> <span className="font-bold underline ml-2 uppercase">{data.client}</span></p>
+              <p className="text-[12px]"><strong>Fecha:</strong> <span className="font-bold underline ml-2">{data.date}</span></p>
+            </div>
 
-          {/* Importante */}
-          <div className="mt-2 border-t border-black pt-3">
-            <h3 className="font-bold italic underline mb-1.5 text-[11px]">IMPORTANTE:</h3>
-            <ul className="list-disc pl-5 space-y-0.5 text-[9px] font-bold">
-              <li>Cualquier imprevisto o problema surgido durante la realización de la obra se facturará aparte.</li>
-              <li>Los cambios necesarios debido al estado de las superficies se presupuestarán y cobrarán por separado.</li>
-              <li>El 50% del valor del presupuesto se abonará antes de iniciar la obra.</li>
-            </ul>
-          </div>
+            {/* Tabla de Partidas */}
+            <div className="flex-grow overflow-hidden mb-4 max-h-[160mm]">
+              <table className="w-full border-collapse border-[1.5px] border-black text-[10px]">
+                <thead>
+                  <tr className="bg-slate-700 text-white uppercase text-[9px] font-bold">
+                    <th className="border border-black p-1.5 text-left w-[55%]">DESCRIPCION</th>
+                    <th className="border border-black p-1.5 text-center w-[15%]">UNIDADES</th>
+                    <th className="border border-black p-1.5 text-center w-[15%]">P. Unit. (€)</th>
+                    <th className="border border-black p-1.5 text-center w-[15%]">Precio (€)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.lines.map((line, i) => (
+                    <tr key={i} className="leading-tight">
+                      <td className="border border-black p-1.5 font-bold uppercase">{line.description}</td>
+                      <td className="border border-black p-1.5 text-center font-bold">{line.units || ''}</td>
+                      <td className="border border-black p-1.5 text-right font-bold">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
+                      <td className="border border-black p-1.5 text-right font-bold">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Footer Watermark */}
-          <div className="mt-auto pt-4 text-center pb-2 flex flex-col items-center">
-            <h1 className="text-3xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
-            <p className="text-[8px] text-gray-300 uppercase tracking-widest font-bold mt-1">SantiSystems</p>
+            {/* Totales */}
+            <div className="flex justify-end mb-4">
+              <div className="w-48 space-y-1">
+                <div className="flex border-[1.5px] border-black">
+                  <div className="w-1/2 p-1 font-bold bg-gray-50 text-[10px]">TOTAL €</div>
+                  <div className="w-1/2 p-1 font-bold text-right border-l border-black text-[10px]">{data.subtotal.toFixed(2)}€</div>
+                </div>
+                
+                <div className="space-y-0">
+                  <div className="flex border-[1.5px] border-black border-b-0">
+                    <div className="w-1/2 p-1 font-bold text-[10px]">IVA 21%</div>
+                    <div className="w-1/2 p-1 font-bold text-right border-l border-black text-[10px]">{data.iva.toFixed(2)}€</div>
+                  </div>
+                  <div className="flex border-[1.5px] border-black bg-slate-100">
+                    <div className="w-1/2 p-1 font-black uppercase text-[11px]">TOTAL</div>
+                    <div className="w-1/2 p-1 font-black text-right border-l border-black text-[12px]">{data.total.toFixed(2)}€</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Importante */}
+            <div className="mt-2 border-t border-black pt-3">
+              <h3 className="font-bold italic underline mb-1.5 text-[11px]">IMPORTANTE:</h3>
+              <ul className="list-disc pl-5 space-y-0.5 text-[9px] font-bold">
+                <li>Cualquier imprevisto o problema surgido durante la realización de la obra se facturará aparte.</li>
+                <li>Los cambios necesarios debido al estado de las superficies se presupuestarán y cobrarán por separado.</li>
+                <li>El 50% del valor del presupuesto se abonará antes de iniciar la obra.</li>
+              </ul>
+            </div>
+
+            {/* Footer Watermark */}
+            <div className="mt-auto pt-4 text-center pb-2 flex flex-col items-center">
+              <h1 className="text-3xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
+              <p className="text-[8px] text-gray-300 uppercase tracking-widest font-bold mt-1">SantiSystems</p>
+            </div>
           </div>
         </div>
       </div>
