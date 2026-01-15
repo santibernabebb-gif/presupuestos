@@ -11,9 +11,9 @@ const budgetSchema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          description: { type: Type.STRING, description: "Descripción del trabajo" },
-          units: { type: Type.NUMBER, description: "Cantidad numérica" },
-          unitPrice: { type: Type.NUMBER, description: "Precio unitario" },
+          description: { type: Type.STRING, description: "Descripción del trabajo o concepto" },
+          units: { type: Type.NUMBER, description: "Cantidad numérica (si existe)" },
+          unitPrice: { type: Type.NUMBER, description: "Precio unitario (si existe)" },
         },
         required: ["description"]
       }
@@ -28,12 +28,14 @@ export const extractBudgetData = async (base64Images: string[]): Promise<BudgetD
   
   const prompt = `
     Analiza estas ${base64Images.length} imágenes que corresponden a un mismo presupuesto.
-    REQUISITOS:
-    - Combina toda la información en un único JSON.
-    - Extrae el cliente y la fecha (hoy si no hay).
-    - Crea una lista de partidas unificada con descripción, unidades y precio de TODAS las páginas.
-    - Si no hay unidades o precio, usa 0.
-    - Evita duplicar líneas si aparecen en varias fotos por solapamiento.
+    REQUISITOS DE EXTRACCIÓN:
+    - Combina toda la información en un único JSON estructurado.
+    - Extrae el cliente y la fecha (usa la fecha de hoy si no se encuentra ninguna).
+    - IMPORTANTE: Incluye TODAS las líneas de texto relevantes encontradas en el documento, incluso aquellas que NO tengan valores numéricos (unidades o precio). Estas líneas pueden ser encabezados de sección, anuncios de otros presupuestos internos, subtítulos o notas importantes.
+    - Crea una lista de partidas unificada con descripción de TODAS las páginas.
+    - Si una línea tiene descripción pero no tiene unidades o precio, pon 0 en esos campos numéricos.
+    - Evita duplicar líneas si aparecen en varias fotos por solapamiento de la cámara.
+    - Mantén el orden de aparición del documento original.
     - RESPONDE SOLO CON EL JSON.
   `;
 
@@ -76,6 +78,7 @@ export const extractBudgetData = async (base64Images: string[]): Promise<BudgetD
         const unitPrice = parseFloat(line.unitPrice) || 0;
         const totalPrice = units * unitPrice;
         subtotal += totalPrice;
+        
         return {
           description: line.description.toUpperCase(),
           units: units > 0 ? units : undefined,
