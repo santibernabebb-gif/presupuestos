@@ -12,6 +12,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BudgetData | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [autoDownloadRequested, setAutoDownloadRequested] = useState(false);
 
   // Load history from local storage on mount
   useEffect(() => {
@@ -53,6 +54,7 @@ const App: React.FC = () => {
       localStorage.setItem('lalo_budget_history', JSON.stringify(newHistory));
       
       setCapturedImage(null);
+      setAutoDownloadRequested(false);
     } catch (err) {
       console.error(err);
       setError("Error al procesar la imagen con IA. Inténtalo de nuevo.");
@@ -65,6 +67,7 @@ const App: React.FC = () => {
     setCapturedImage(null);
     setResult(null);
     setError(null);
+    setAutoDownloadRequested(false);
   };
 
   const handleDeleteFromHistory = (id: string) => {
@@ -72,15 +75,15 @@ const App: React.FC = () => {
     setHistory(newHistory);
     localStorage.setItem('lalo_budget_history', JSON.stringify(newHistory));
     
-    // Si el resultado actual es el que estamos borrando, resetear vista
     if (result && history.find(h => h.id === id)?.data.budgetNumber === result.budgetNumber) {
         setResult(null);
     }
   };
 
-  const handleSelectFromHistory = (item: HistoryItem) => {
+  const handleSelectFromHistory = (item: HistoryItem, autoDownload: boolean = false) => {
     setResult(item.data);
     setCapturedImage(null);
+    setAutoDownloadRequested(autoDownload);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -171,7 +174,12 @@ const App: React.FC = () => {
         )}
 
         {result && !processing && (
-          <ResultView data={result} onReset={handleReset} />
+          <ResultView 
+            data={result} 
+            onReset={handleReset} 
+            autoDownload={autoDownloadRequested}
+            onAutoDownloadComplete={() => setAutoDownloadRequested(false)}
+          />
         )}
 
         {!processing && !capturedImage && (

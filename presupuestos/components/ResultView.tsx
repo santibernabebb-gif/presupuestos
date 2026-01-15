@@ -1,15 +1,28 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BudgetData } from '../types';
 import { generateDocx, downloadBlob } from '../services/documentService';
 
 interface Props {
   data: BudgetData;
   onReset: () => void;
+  autoDownload?: boolean;
+  onAutoDownloadComplete?: () => void;
 }
 
-const ResultView: React.FC<Props> = ({ data, onReset }) => {
+const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownloadComplete }) => {
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (autoDownload) {
+      // Pequeño retardo para asegurar que el DOM está listo
+      const timer = setTimeout(() => {
+        handleDownloadPdf(true);
+        if (onAutoDownloadComplete) onAutoDownloadComplete();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoDownload, data]);
 
   const handleDownloadDocx = async () => {
     try {
@@ -21,7 +34,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
     }
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = (isAuto = false) => {
     const element = document.getElementById('template-preview');
     if (!element) return;
     
@@ -50,7 +63,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
         }
       }
     }).save().then(() => {
-      setShowModal(true);
+      if (!isAuto) setShowModal(true);
     });
   };
 
@@ -79,15 +92,18 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-6">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Presupuesto Finalizado</h2>
-          <p className="text-gray-500 text-sm italic uppercase tracking-widest">Estrictamente 1 sola página A4</p>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Presupuesto</h2>
+          <p className="text-gray-500 text-sm italic uppercase tracking-widest font-bold">Documento Oficial de Trabajo</p>
         </div>
         <div className="flex space-x-3">
           <button 
             onClick={onReset}
-            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 font-bold transition"
+            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 font-bold transition flex items-center space-x-2"
           >
-            Nueva Captura
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>NUEVA CAPTURA</span>
           </button>
         </div>
       </div>
@@ -103,7 +119,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
           <span className="font-black text-lg uppercase">Generar Word (.docx)</span>
         </button>
         <button
-          onClick={handleDownloadPdf}
+          onClick={() => handleDownloadPdf(false)}
           className="flex items-center justify-center space-x-3 bg-red-500 text-white py-4 px-6 rounded-xl hover:bg-red-600 transition-all shadow-lg hover:shadow-red-200"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
