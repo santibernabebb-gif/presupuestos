@@ -2,21 +2,34 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BudgetData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const budgetSchema = {
   type: Type.OBJECT,
   properties: {
-    client: { type: Type.STRING, description: "Nombre del cliente" },
-    date: { type: Type.STRING, description: "Fecha del presupuesto (formato DD/MM/AAAA)" },
+    client: { 
+      type: Type.STRING, 
+      description: "Nombre del cliente extraído de la foto" 
+    },
+    date: { 
+      type: Type.STRING, 
+      description: "Fecha del presupuesto (DD/MM/AAAA)" 
+    },
     lines: {
       type: Type.ARRAY,
       items: {
         type: Type.OBJECT,
         properties: {
-          description: { type: Type.STRING },
-          units: { type: Type.NUMBER },
-          unitPrice: { type: Type.NUMBER },
+          description: { 
+            type: Type.STRING,
+            description: "Descripción de la partida de trabajo"
+          },
+          units: { 
+            type: Type.NUMBER,
+            description: "Cantidad o unidades (si existen)"
+          },
+          unitPrice: { 
+            type: Type.NUMBER,
+            description: "Precio por unidad (si existe)"
+          },
         },
         required: ["description"]
       }
@@ -26,75 +39,96 @@ const budgetSchema = {
 };
 
 export const extractBudgetData = async (base64Image: string): Promise<BudgetData> => {
-  const model = 'gemini-3-flash-preview';
+  // Inicializamos dentro de la función para asegurar que toma la API_KEY más reciente
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  // Usamos Gemini 3 Pro Preview para máxima precisión en caligrafía difícil
+  const model = 'gemini-3-pro-preview';
   
   const prompt = `
-    Analiza esta imagen de un presupuesto manuscrito. 
-    Tu tarea es extraer la información para rellenar una PLANTILLA SAGRADA.
+    Eres un experto administrativo especializado en leer presupuestos manuscritos de pintores.
+    Analiza la imagen adjunta y extrae la información para rellenar la plantilla oficial de Lalo Quilis.
     
-    REGLAS DE EXTRACCIÓN:
-    1. Lee el Cliente y la Fecha. Si no hay fecha, usa la de hoy: ${new Date().toLocaleDateString('es-ES')}.
-    2. Extrae cada partida de trabajo (Descripción, Unidades, Precio Unitario).
-    3. Si una línea no tiene números, deja unidades y precio unitario vacíos.
-    4. NO añadidas NINGUNA nota ni aviso sobre si la letra es ilegible o si faltan datos. Limítate a extraer lo que veas.
-    5. Corrige faltas de ortografía básicas de pintura (ej. 'guita' -> 'gota').
-    6. REGLA DE ORDEN: Las partidas que NO tengan números deben aparecer PRIMERO. Las que TENGAN números van ABAJO.
+    INSTRUCCIONES CRÍTICAS:
+    1. CLIENTE Y FECHA: Identifica claramente el nombre del cliente. Si no ves fecha, usa la de hoy: ${new Date().toLocaleDateString('es-ES')}.
+    2. PARTIDAS: Extrae cada concepto de trabajo. Si una línea describe un trabajo pero no tiene precio, déjala con unidades 0 y precio 0.
+    3. CORRECCIÓN: Corrige términos técnicos de pintura si están mal escritos (ej: 'estucado', 'alisado', 'imprimación').
+    4. ORDEN SAGRADO:
+       - Primero las líneas que son SOLO descripción (sin precios).
+       - Al final las líneas que TIENEN unidades y precios calculables.
+    5. No incluyas comentarios personales ni avisos sobre la legibilidad.
     
-    Devuelve solo el JSON.
+    Responde estrictamente en formato JSON siguiendo el esquema proporcionado.
   `;
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: {
-      parts: [
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: base64Image.split(',')[1]
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: [{
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Image.split(',')[1]
+            }
           }
-        }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: budgetSchema
+        ]
+      }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: budgetSchema,
+        // Activamos el pensamiento para que la IA razone sobre la escritura difícil antes de responder
+        thinkingConfig: { thinkingBudget: 4000 } 
+      }
+    });
+
+    if (!response.text) {
+      throw new Error("La IA devolvió una respuesta vacía.");
     }
-  });
 
-  const rawData = JSON.parse(response.text || '{}');
-  
-  // Sacred Rule: items without numbers first, items with numbers last
-  const sortedLines = [...rawData.lines].sort((a, b) => {
-    const aHasNumbers = (a.units != null && a.units > 0) || (a.unitPrice != null && a.unitPrice > 0);
-    const bHasNumbers = (b.units != null && b.units > 0) || (b.unitPrice != null && b.unitPrice > 0);
-    if (!aHasNumbers && bHasNumbers) return -1;
-    if (aHasNumbers && !bHasNumbers) return 1;
-    return 0;
-  });
+    const rawData = JSON.parse(response.text);
+    console.log("Datos extraídos por IA:", rawData);
+    
+    // Ordenar: items sin precio arriba, con precio abajo
+    const sortedLines = [...rawData.lines].sort((a, b) => {
+      const aHasPrice = (a.unitPrice && a.unitPrice > 0);
+      const bHasPrice = (b.unitPrice && b.unitPrice > 0);
+      if (!aHasPrice && bHasPrice) return -1;
+      if (aHasPrice && !bHasPrice) return 1;
+      return 0;
+    });
 
-  // Sacred Calculations
-  let subtotal = 0;
-  const processedLines = sortedLines.map((line: any) => {
-    const units = line.units || 0;
-    const unitPrice = line.unitPrice || 0;
-    const totalPrice = units * unitPrice;
-    subtotal += totalPrice;
-    return { ...line, totalPrice };
-  });
+    // Cálculos de totales
+    let subtotal = 0;
+    const processedLines = sortedLines.map((line: any) => {
+      const units = Number(line.units) || 0;
+      const unitPrice = Number(line.unitPrice) || 0;
+      const totalPrice = units * unitPrice;
+      subtotal += totalPrice;
+      return {
+        description: line.description || "Sin descripción",
+        units: units > 0 ? units : undefined,
+        unitPrice: unitPrice > 0 ? unitPrice : undefined,
+        totalPrice: totalPrice > 0 ? totalPrice : undefined
+      };
+    });
 
-  const iva = subtotal * 0.21;
-  const total = subtotal + iva;
+    const iva = subtotal * 0.21;
+    const total = subtotal + iva;
+    const budgetNumber = `LALO-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
-  const budgetNumber = `SANTI-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-
-  return {
-    budgetNumber,
-    client: rawData.client,
-    date: rawData.date,
-    lines: processedLines,
-    subtotal,
-    iva,
-    total
-  };
+    return {
+      budgetNumber,
+      client: rawData.client || "Cliente no detectado",
+      date: rawData.date || new Date().toLocaleDateString('es-ES'),
+      lines: processedLines,
+      subtotal,
+      iva,
+      total
+    };
+  } catch (error) {
+    console.error("Error detallado en Gemini Service:", error);
+    throw error;
+  }
 };
