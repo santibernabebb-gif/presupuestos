@@ -11,114 +11,130 @@ export const generateDocx = async (data: BudgetData): Promise<Blob> => {
     children: [
       new TableCell({ 
         shading: { fill: "334155" }, // Slate 700
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "DESCRIPCION", bold: true, color: "FFFFFF", size: 18 })] })] 
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "DESCRIPCION", bold: true, color: "FFFFFF", size: 16 })] })] 
       }),
       new TableCell({ 
         shading: { fill: "334155" },
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "UNIDADES", bold: true, color: "FFFFFF", size: 18 })] })] 
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "UNIDADES", bold: true, color: "FFFFFF", size: 16 })] })] 
       }),
       new TableCell({ 
         shading: { fill: "334155" },
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Precio Unitario (€)", bold: true, color: "FFFFFF", size: 18 })] })] 
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Precio Unit. (€)", bold: true, color: "FFFFFF", size: 16 })] })] 
       }),
       new TableCell({ 
         shading: { fill: "334155" },
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Precio (€)", bold: true, color: "FFFFFF", size: 18 })] })] 
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Precio (€)", bold: true, color: "FFFFFF", size: 16 })] })] 
       }),
     ],
   });
 
   const dataRows = data.lines.map(line => new TableRow({
     children: [
-      new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: line.description, bold: true, size: 20 })] })] }),
-      new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: line.units?.toString() || "", bold: true, size: 20 })] })] }),
-      new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: line.unitPrice ? formatCurrency(line.unitPrice) : "", bold: true, size: 20 })] })] }),
-      new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: line.totalPrice ? formatCurrency(line.totalPrice) : "", bold: true, size: 20 })] })] }),
+      new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: line.description, bold: true, size: 18 })] })] }),
+      new TableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: line.units?.toString() || "", bold: true, size: 18 })] })] }),
+      new TableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: line.unitPrice ? formatCurrency(line.unitPrice) : "", bold: true, size: 18 })] })] }),
+      new TableCell({ verticalAlign: VerticalAlign.CENTER, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: line.totalPrice ? formatCurrency(line.totalPrice) : "", bold: true, size: 18 })] })] }),
     ],
   }));
 
   const doc = new Document({
     sections: [{
-      properties: {},
+      properties: {
+        page: {
+          margin: {
+            top: 720, // ~1.27 cm
+            right: 720,
+            bottom: 720,
+            left: 720,
+          },
+        },
+      },
       children: [
-        // Watermark top (simplified representation in Word)
+        // Top Label
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: "PRESUPUESTO", bold: true, size: 72, color: "A5F3FC", italics: true })],
+          children: [new TextRun({ text: "PRESUPUESTO", bold: true, size: 48, color: "E0F2FE", italics: true })],
         }),
 
-        // Branding Header
-        new Paragraph({ children: [new TextRun({ text: "Eduardo Quilis Llorens", bold: true, size: 28 })] }),
-        new Paragraph({ children: [new TextRun({ text: "C/ Cervantes 41 • Onil • 03430", size: 18 })] }),
-        new Paragraph({ children: [new TextRun({ text: "quilislalo@gmail.com", size: 18 })] }),
-        new Paragraph({ children: [new TextRun({ text: "620-944-229 • NIF: 21667776-M", bold: true, size: 18 })] }),
+        // Branding
+        new Paragraph({ children: [new TextRun({ text: "Eduardo Quilis Llorens", bold: true, size: 24 })] }),
+        new Paragraph({ children: [new TextRun({ text: "C/ Cervantes 41 • Onil • 03430 | 620-944-229 • NIF: 21667776-M", size: 14 })] }),
 
-        new Paragraph({ spacing: { before: 400 } }),
+        new Paragraph({ spacing: { before: 200 } }),
 
         // Client & Date
         new Paragraph({ children: [new TextRun({ text: "Cliente: ", bold: true }), new TextRun({ text: data.client, bold: true, underline: {} })] }),
         new Paragraph({ children: [new TextRun({ text: "Fecha: ", bold: true }), new TextRun({ text: data.date, bold: true, underline: {} })] }),
 
-        new Paragraph({ spacing: { before: 400 } }),
+        new Paragraph({ spacing: { before: 300 } }),
 
         // Main Table
         new Table({
           width: { size: 100, type: WidthType.PERCENTAGE },
+          borders: {
+            top: borderStyle,
+            bottom: borderStyle,
+            left: borderStyle,
+            right: borderStyle,
+            insideHorizontal: borderStyle,
+            insideVertical: borderStyle,
+          },
           rows: [tableHeader, ...dataRows],
         }),
 
-        new Paragraph({ spacing: { before: 400 } }),
+        new Paragraph({ spacing: { before: 300 } }),
 
-        // Totals Section
+        // Totals
         new Table({
           alignment: AlignmentType.RIGHT,
-          width: { size: 40, type: WidthType.PERCENTAGE },
+          width: { size: 45, type: WidthType.PERCENTAGE },
           rows: [
             new TableRow({
               children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "TOTAL €", bold: true })] })] }),
-                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(data.subtotal), bold: true })] })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "TOTAL €", bold: true, size: 16 })] })] }),
+                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(data.subtotal), bold: true, size: 16 })] })] }),
               ]
             }),
             new TableRow({
               children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "IVA 21%", bold: true })] })] }),
-                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(data.iva), bold: true })] })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "IVA 21%", bold: true, size: 16 })] })] }),
+                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(data.iva), bold: true, size: 16 })] })] }),
               ]
             }),
             new TableRow({
               children: [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "TOTAL", bold: true })] })] }),
-                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(data.total), bold: true })] })] }),
+                new TableCell({ shading: { fill: "F1F5F9" }, children: [new Paragraph({ children: [new TextRun({ text: "TOTAL FINAL", bold: true, size: 18 })] })] }),
+                new TableCell({ shading: { fill: "F1F5F9" }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: formatCurrency(data.total), bold: true, size: 20 })] })] }),
               ]
             }),
           ]
         }),
 
-        new Paragraph({ spacing: { before: 600 } }),
+        new Paragraph({ spacing: { before: 400 } }),
 
-        // Importante
+        // Terms
         new Paragraph({ children: [new TextRun({ text: "IMPORTANTE:", bold: true, italics: true, underline: {} })] }),
         new Paragraph({
-          children: [new TextRun({ text: "• Cualquier imprevisto o problema surgido durante la realización de la obra se facturará aparte.", size: 18, bold: true })],
+          spacing: { before: 100 },
+          children: [new TextRun({ text: "• Cualquier imprevisto o problema surgido durante la realización de la obra se facturará aparte.", size: 14, bold: true })],
         }),
         new Paragraph({
-          children: [new TextRun({ text: "• Los cambios necesarios debido al estado de las superficies se presupuestarán y cobrarán por separado.", size: 18, bold: true })],
+          children: [new TextRun({ text: "• Los cambios necesarios debido al estado de las superficies se presupuestarán y cobrarán por separado.", size: 14, bold: true })],
         }),
         new Paragraph({
-          children: [new TextRun({ text: "• El 50% del valor del presupuesto se abonará antes de iniciar la obra.", size: 18, bold: true })],
+          children: [new TextRun({ text: "• El 50% del valor del presupuesto se abonará antes de iniciar la obra.", size: 14, bold: true })],
         }),
 
         ...(data.notes ? [
-          new Paragraph({ spacing: { before: 400 } }),
-          new Paragraph({ children: [new TextRun({ text: data.notes, bold: true, italics: true, color: "FF0000", size: 18 })] })
+          new Paragraph({ spacing: { before: 300 } }),
+          new Paragraph({ children: [new TextRun({ text: `NOTAS: ${data.notes}`, bold: true, italics: true, color: "FF0000", size: 14 })] })
         ] : []),
 
-        // Watermark bottom
+        // Bottom Watermark representation
         new Paragraph({
           spacing: { before: 800 },
           alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: "PRESUPUESTO", bold: true, size: 72, color: "A5F3FC", italics: true })],
+          children: [new TextRun({ text: "PRESUPUESTO - UNA SOLA PÁGINA", bold: true, size: 36, color: "E0F2FE", italics: true })],
         }),
       ],
     }],

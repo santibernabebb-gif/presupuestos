@@ -23,8 +23,9 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
       margin: 0,
       filename: `Presupuesto_${data.budgetNumber}_${data.client.replace(/\s/g, '_')}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'avoid-all' } // Regla crítica para evitar saltos de página
     };
     
     // @ts-ignore
@@ -36,7 +37,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-6">
         <div>
           <h2 className="text-3xl font-black text-gray-900 tracking-tight">Presupuesto Generado</h2>
-          <p className="text-gray-500 text-sm italic">Siguiendo estrictamente la Plantilla Sagrada de Lalo Quilis.</p>
+          <p className="text-gray-500 text-sm italic">Siguiendo estrictamente la Plantilla Sagrada (1 sola página).</p>
         </div>
         <div className="flex space-x-3">
           <button 
@@ -56,7 +57,7 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <span className="font-black text-lg uppercase">Generar Plantilla Lalo (.docx)</span>
+          <span className="font-black text-lg uppercase">Generar Word Lalo (.docx)</span>
         </button>
         <button
           onClick={handleDownloadPdf}
@@ -69,113 +70,114 @@ const ResultView: React.FC<Props> = ({ data, onReset }) => {
         </button>
       </div>
 
-      {/* SACRED TEMPLATE PREVIEW - REPLICATING THE IMAGE PRECISELY */}
+      {/* SACRED TEMPLATE PREVIEW - FORCED SINGLE PAGE */}
       <div className="bg-gray-300 p-2 md:p-8 rounded-xl overflow-hidden shadow-inner flex justify-center">
         <div 
           id="template-preview" 
-          className="bg-white shadow-2xl p-12 md:p-16 w-full max-w-[210mm] min-h-[297mm] text-[14px] text-black font-sans relative"
-          style={{ lineHeight: '1.4' }}
+          className="bg-white shadow-2xl p-10 md:p-14 w-full max-w-[210mm] h-[297mm] text-[13px] text-black font-sans relative overflow-hidden"
+          style={{ lineHeight: '1.3', pageBreakInside: 'avoid' }}
         >
           {/* Top Watermark */}
-          <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold opacity-20 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
+          <div className="text-center mb-6">
+            <h1 className="text-4xl font-bold opacity-10 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
           </div>
 
-          <div className="flex justify-between items-start mb-16">
+          <div className="flex justify-between items-start mb-10">
             {/* Header Text */}
-            <div className="flex flex-col space-y-1">
-              <h2 className="text-xl font-bold">Eduardo Quilis Llorens</h2>
-              <p className="text-sm">C/ Cervantes 41 • Onil • 03430</p>
-              <p className="text-sm">quilislalo@gmail.com</p>
-              <p className="text-sm font-semibold">620-944-229 • NIF: 21667776-M</p>
+            <div className="flex flex-col space-y-0.5">
+              <h2 className="text-lg font-extrabold uppercase tracking-tight">Eduardo Quilis Llorens</h2>
+              <p className="text-xs">C/ Cervantes 41 • Onil • 03430</p>
+              <p className="text-xs">quilislalo@gmail.com</p>
+              <p className="text-xs font-bold">620-944-229 • NIF: 21667776-M</p>
             </div>
             
             {/* Logo area */}
             <div className="flex flex-col items-center">
-              <div className="bg-slate-800 text-white p-2 rounded flex flex-col items-center w-48">
+              <div className="bg-slate-800 text-white p-1.5 rounded flex flex-col items-center w-40">
                 <div className="flex items-center space-x-2 w-full justify-center">
-                   <div className="text-xl font-bold leading-tight">LALO<br/>QUILIS</div>
-                   <div className="h-10 w-1 flex flex-col justify-between">
+                   <div className="text-lg font-black leading-tight">LALO<br/>QUILIS</div>
+                   <div className="h-8 w-1 flex flex-col justify-between">
                       <div className="h-1/3 bg-blue-400"></div>
                       <div className="h-1/3 bg-pink-500"></div>
                       <div className="h-1/3 bg-yellow-400"></div>
                    </div>
                 </div>
-                <div className="text-[9px] mt-1 border-t border-white/30 pt-1 tracking-widest uppercase">Pinturas y Decoración</div>
+                <div className="text-[7px] mt-0.5 border-t border-white/20 pt-0.5 tracking-widest uppercase font-bold">Pinturas y Decoración</div>
               </div>
             </div>
           </div>
           
-          {/* Client & Date Info (Sacred Rule: After text) */}
-          <div className="mb-12 space-y-2">
+          {/* Client & Date Info */}
+          <div className="mb-8 space-y-1 bg-gray-50 p-3 border border-gray-200 rounded">
             <p><strong>Cliente:</strong> <span className="font-bold underline ml-2">{data.client}</span></p>
             <p><strong>Fecha:</strong> <span className="font-bold underline ml-2">{data.date}</span></p>
           </div>
 
           {/* Table (Sacred Columns) */}
-          <table className="w-full border-collapse mb-6 border-[1.5px] border-black text-xs">
-            <thead>
-              <tr className="bg-slate-700 text-white uppercase text-[11px] font-bold">
-                <th className="border border-black p-2 text-left w-2/3">DESCRIPCION</th>
-                <th className="border border-black p-2 text-center w-20">UNIDADES</th>
-                <th className="border border-black p-2 text-center">Precio Unitario (€)</th>
-                <th className="border border-black p-2 text-center">Precio (€)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.lines.map((line, i) => (
-                <tr key={i}>
-                  <td className="border border-black p-2 font-bold">{line.description}</td>
-                  <td className="border border-black p-2 text-center font-bold">{line.units || ''}</td>
-                  <td className="border border-black p-2 text-right font-bold">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
-                  <td className="border border-black p-2 text-right font-bold">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
+          <div className="min-h-[300px]">
+            <table className="w-full border-collapse border-[1.5px] border-black text-xs">
+              <thead>
+                <tr className="bg-slate-700 text-white uppercase text-[10px] font-bold">
+                  <th className="border border-black p-2 text-left w-3/5">DESCRIPCION</th>
+                  <th className="border border-black p-2 text-center w-20">UNIDADES</th>
+                  <th className="border border-black p-2 text-center">P. Unit. (€)</th>
+                  <th className="border border-black p-2 text-center">Precio (€)</th>
                 </tr>
-              ))}
-              {/* Sacred Rule: Remove empty lines if possible, or add fixed rows like the template if many */}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.lines.map((line, i) => (
+                  <tr key={i}>
+                    <td className="border border-black p-2 font-bold whitespace-pre-wrap">{line.description}</td>
+                    <td className="border border-black p-2 text-center font-bold">{line.units || ''}</td>
+                    <td className="border border-black p-2 text-right font-bold">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
+                    <td className="border border-black p-2 text-right font-bold">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          {/* Summary Section - EXACT Layout from image */}
-          <div className="flex justify-end mb-16">
-            <div className="w-64 space-y-4">
+          {/* Summary Section */}
+          <div className="flex justify-end mt-4 mb-8">
+            <div className="w-56 space-y-1.5">
               <div className="flex border-[1.5px] border-black">
-                <div className="w-1/2 p-1 font-bold bg-gray-50">TOTAL €</div>
-                <div className="w-1/2 p-1 font-bold text-right border-l border-black">{data.subtotal.toFixed(2)}€</div>
+                <div className="w-1/2 p-1.5 font-bold bg-gray-50 text-[11px]">TOTAL €</div>
+                <div className="w-1/2 p-1.5 font-bold text-right border-l border-black text-[11px]">{data.subtotal.toFixed(2)}€</div>
               </div>
               
               <div className="space-y-0">
                 <div className="flex border-[1.5px] border-black border-b-0">
-                  <div className="w-1/2 p-1 font-bold">IVA 21%</div>
-                  <div className="w-1/2 p-1 font-bold text-right border-l border-black">{data.iva.toFixed(2)}€</div>
+                  <div className="w-1/2 p-1.5 font-bold text-[11px]">IVA 21%</div>
+                  <div className="w-1/2 p-1.5 font-bold text-right border-l border-black text-[11px]">{data.iva.toFixed(2)}€</div>
                 </div>
-                <div className="flex border-[1.5px] border-black">
-                  <div className="w-1/2 p-1 font-bold uppercase">TOTAL</div>
-                  <div className="w-1/2 p-1 font-bold text-right border-l border-black">{data.total.toFixed(2)}€</div>
+                <div className="flex border-[1.5px] border-black bg-slate-100">
+                  <div className="w-1/2 p-1.5 font-black uppercase text-[12px]">TOTAL FINAL</div>
+                  <div className="w-1/2 p-1.5 font-black text-right border-l border-black text-[13px]">{data.total.toFixed(2)}€</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* IMPORTANTE Section - EXACT Content from image */}
-          <div className="mt-12">
-            <h3 className="font-bold italic underline mb-4">IMPORTANTE:</h3>
-            <ul className="list-disc pl-8 space-y-2 text-xs font-bold">
+          {/* IMPORTANTE Section */}
+          <div className="mt-6 border-t border-black pt-4">
+            <h3 className="font-bold italic underline mb-2 text-xs">IMPORTANTE:</h3>
+            <ul className="list-disc pl-6 space-y-1 text-[10px] font-bold">
               <li>Cualquier imprevisto o problema surgido durante la realización de la obra se facturará aparte.</li>
               <li>Los cambios necesarios debido al estado de las superficies se presupuestarán y cobrarán por separado.</li>
               <li>El 50% del valor del presupuesto se abonará antes de iniciar la obra.</li>
             </ul>
           </div>
 
-          {/* Notes area if illegible */}
           {data.notes && (
-            <div className="mt-12 p-2 border-t border-dashed border-gray-400">
-              <p className="text-[10px] text-red-600 font-bold italic">{data.notes}</p>
+            <div className="mt-4 p-2 border border-red-200 bg-red-50 rounded">
+              <p className="text-[9px] text-red-700 font-bold italic">{data.notes}</p>
             </div>
           )}
 
           {/* Bottom Watermark */}
-          <div className="absolute bottom-12 left-0 right-0 text-center">
-            <h1 className="text-6xl font-bold opacity-15 text-blue-400 tracking-[0.2em] uppercase italic">PRESUPUESTO</h1>
+          <div className="absolute bottom-10 left-0 right-0 text-center">
+            <h1 className="text-5xl font-bold opacity-10 text-blue-400 tracking-[0.3em] uppercase italic">PRESUPUESTO</h1>
+            <p className="text-[8px] text-gray-400 mt-2 uppercase tracking-widest">SantiSystems v2.0 - Solo rellenar datos indicados</p>
           </div>
         </div>
       </div>
