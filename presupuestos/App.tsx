@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import CameraCapture from './components/CameraCapture';
 import ResultView from './components/ResultView';
@@ -9,7 +8,7 @@ import { BudgetData, HistoryItem } from './types';
 const App: React.FC = () => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{message: string, isQuota: boolean} | null>(null);
   const [result, setResult] = useState<BudgetData | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [autoDownloadRequested, setAutoDownloadRequested] = useState(false);
@@ -28,6 +27,17 @@ const App: React.FC = () => {
   const handleCapture = (base64: string) => {
     setCapturedImage(base64);
     setError(null);
+  };
+
+  const handleSelectKey = async () => {
+    try {
+      // Per guidelines, we assume the key selection was successful after triggering openSelectKey.
+      // Use type casting to bypass global declaration conflicts with pre-existing 'aistudio' types.
+      await (window as any).aistudio.openSelectKey();
+      setError(null); // Limpiamos el error tras intentar cambiar la clave
+    } catch (e) {
+      console.error("Error opening key selector", e);
+    }
   };
 
   const handleProcess = async () => {
@@ -53,7 +63,22 @@ const App: React.FC = () => {
       
       setCapturedImage(null);
     } catch (err: any) {
-      setError(err.message || "Error desconocido al procesar.");
+      // Handle "Requested entity was not found" error by prompting for API key as per guidelines.
+      if (err.message && err.message.includes("Requested entity was not found.")) {
+        handleSelectKey();
+        return;
+      }
+
+      const isQuota = err.message?.toLowerCase().includes('quota') || 
+                      err.message?.toLowerCase().includes('exhausted') ||
+                      err.message?.includes('429');
+      
+      setError({
+        message: isQuota 
+          ? "Has agotado las peticiones gratuitas diarias. Selecciona tu propia API Key para continuar." 
+          : (err.message || "Error desconocido al procesar."),
+        isQuota
+      });
     } finally {
       setProcessing(false);
     }
@@ -89,7 +114,7 @@ const App: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-none tracking-tight">Lalo Quilis App</h1>
+              <h1 className="text-xl font-bold text-gray-900 leading-none tracking-tight text-nowrap">SantiSystems - Presupuesto</h1>
               <p className="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-widest">Power by SantiSystems</p>
             </div>
           </div>
@@ -106,14 +131,34 @@ const App: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-4">
         {error && (
-          <div className="bg-red-600 text-white p-6 rounded-3xl mb-8 shadow-2xl animate-bounce">
-            <div className="flex items-center space-x-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div>
-                <p className="font-black text-lg">HUBO UN PROBLEMA</p>
-                <p className="font-medium opacity-90">{error}</p>
+          <div className={`p-6 rounded-3xl mb-8 shadow-2xl transition-all ${error.isQuota ? 'bg-amber-50 border-2 border-amber-200 text-amber-900' : 'bg-red-600 text-white animate-bounce'}`}>
+            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4 text-center sm:text-left">
+              <div className={`p-3 rounded-full ${error.isQuota ? 'bg-amber-100' : 'bg-red-500'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-black text-lg uppercase tracking-tight">{error.isQuota ? 'Límite diario alcanzado' : 'Hubo un problema'}</p>
+                <p className="font-medium opacity-90 text-sm mb-4">{error.message}</p>
+                {error.isQuota && (
+                  <div className="flex flex-col space-y-3">
+                    <button 
+                      onClick={handleSelectKey}
+                      className="bg-amber-600 text-white font-black py-3 px-6 rounded-xl hover:bg-amber-700 transition shadow-lg text-xs uppercase tracking-widest"
+                    >
+                      Configurar Mi Propia API Key (Ilimitado)
+                    </button>
+                    <a 
+                      href="https://ai.google.dev/gemini-api/docs/billing" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-amber-700 underline font-bold"
+                    >
+                      Saber más sobre facturación de Google Gemini
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>

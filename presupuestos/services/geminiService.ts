@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { BudgetData } from "../types";
 
@@ -24,7 +23,7 @@ const budgetSchema = {
 };
 
 export const extractBudgetData = async (base64Image: string): Promise<BudgetData> => {
-  // Inicialización fresca en cada llamada para evitar estados corruptos
+  // Inicialización fresca en cada llamada para asegurar que se usa la API KEY más reciente del entorno.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = 'gemini-3-flash-preview';
   
@@ -39,14 +38,15 @@ export const extractBudgetData = async (base64Image: string): Promise<BudgetData
   `;
 
   try {
+    // Usamos el formato de contents recomendado en la guía del SDK.
     const response = await ai.models.generateContent({
       model,
-      contents: [{
+      contents: {
         parts: [
           { text: prompt },
           { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
         ]
-      }],
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: budgetSchema,
@@ -58,7 +58,7 @@ export const extractBudgetData = async (base64Image: string): Promise<BudgetData
       throw new Error("La IA no devolvió contenido.");
     }
 
-    // Limpieza de emergencia por si la IA devuelve markdown
+    // El acceso a .text es una propiedad, no un método.
     let cleanJson = response.text.trim();
     if (cleanJson.startsWith('```')) {
       cleanJson = cleanJson.replace(/^```json/, '').replace(/```$/, '').trim();
