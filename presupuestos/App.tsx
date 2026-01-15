@@ -6,7 +6,7 @@ import { extractBudgetData } from './services/geminiService';
 import { BudgetData, HistoryItem } from './types';
 
 const App: React.FC = () => {
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<{message: string, isQuota: boolean} | null>(null);
   const [result, setResult] = useState<BudgetData | null>(null);
@@ -25,28 +25,31 @@ const App: React.FC = () => {
   }, []);
 
   const handleCapture = (base64: string) => {
-    setCapturedImage(base64);
+    if (capturedImages.length >= 4) return;
+    setCapturedImages(prev => [...prev, base64]);
     setError(null);
+  };
+
+  const removeImage = (index: number) => {
+    setCapturedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSelectKey = async () => {
     try {
-      // Per guidelines, we assume the key selection was successful after triggering openSelectKey.
-      // Use type casting to bypass global declaration conflicts with pre-existing 'aistudio' types.
       await (window as any).aistudio.openSelectKey();
-      setError(null); // Limpiamos el error tras intentar cambiar la clave
+      setError(null);
     } catch (e) {
       console.error("Error opening key selector", e);
     }
   };
 
   const handleProcess = async () => {
-    if (!capturedImage) return;
+    if (capturedImages.length === 0) return;
     
     setProcessing(true);
     setError(null);
     try {
-      const data = await extractBudgetData(capturedImage);
+      const data = await extractBudgetData(capturedImages);
       setResult(data);
       
       const newItem: HistoryItem = {
@@ -61,9 +64,8 @@ const App: React.FC = () => {
       setHistory(newHistory);
       localStorage.setItem('lalo_budget_history', JSON.stringify(newHistory));
       
-      setCapturedImage(null);
+      setCapturedImages([]);
     } catch (err: any) {
-      // Handle "Requested entity was not found" error by prompting for API key as per guidelines.
       if (err.message && err.message.includes("Requested entity was not found.")) {
         handleSelectKey();
         return;
@@ -85,7 +87,7 @@ const App: React.FC = () => {
   };
 
   const handleReset = () => {
-    setCapturedImage(null);
+    setCapturedImages([]);
     setResult(null);
     setError(null);
   };
@@ -98,7 +100,7 @@ const App: React.FC = () => {
 
   const handleSelectFromHistory = (item: HistoryItem, autoDownload: boolean = false) => {
     setResult(item.data);
-    setCapturedImage(null);
+    setCapturedImages([]);
     setAutoDownloadRequested(autoDownload);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -115,10 +117,10 @@ const App: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900 leading-none tracking-tight text-nowrap">SantiSystems - Presupuesto</h1>
-              <p className="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-widest">Power by SantiSystems</p>
+              <p className="text-[10px] text-gray-500 mt-1 uppercase font-black tracking-widest text-nowrap">Power by SantiSystems</p>
             </div>
           </div>
-          { (result || capturedImage) && (
+          { (result || capturedImages.length > 0) && (
             <button 
               onClick={handleReset}
               className="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-xl text-xs font-black transition uppercase tracking-widest"
@@ -164,33 +166,47 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {!result && !capturedImage && !processing && (
-          <div className="text-center py-12">
-            <h2 className="text-3xl font-black text-gray-900 mb-4 uppercase italic">¿Nuevo presupuesto?</h2>
-            <p className="text-gray-500 mb-10 max-w-sm mx-auto font-medium">Enfoca bien el papel y asegúrate de que haya luz suficiente.</p>
-            <CameraCapture onCapture={handleCapture} />
-          </div>
-        )}
+        {!result && !processing && (
+          <div className="text-center py-6">
+            <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase italic tracking-tighter">
+              {capturedImages.length > 0 ? `Foto ${capturedImages.length}/4 capturada` : '¿Nuevo presupuesto?'}
+            </h2>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto font-medium">Puedes añadir hasta 4 fotos si el presupuesto tiene varias páginas.</p>
+            
+            {capturedImages.length < 4 && (
+              <CameraCapture onCapture={handleCapture} />
+            )}
 
-        {capturedImage && !processing && (
-          <div className="flex flex-col items-center space-y-6 py-8">
-            <div className="w-full max-w-md bg-white p-3 rounded-[2rem] shadow-2xl overflow-hidden border-4 border-white">
-              <img src={capturedImage} alt="Preview" className="w-full h-auto rounded-2xl" />
-            </div>
-            <div className="flex space-x-4 w-full max-w-md">
-              <button
-                onClick={() => setCapturedImage(null)}
-                className="flex-1 bg-white text-gray-900 font-black py-5 rounded-2xl border-2 border-gray-200 hover:bg-gray-50 transition uppercase text-sm"
-              >
-                Repetir
-              </button>
-              <button
-                onClick={handleProcess}
-                className="flex-1 bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-blue-700 transition transform active:scale-95 uppercase text-sm tracking-widest"
-              >
-                Enviar a IA
-              </button>
-            </div>
+            {capturedImages.length > 0 && (
+              <div className="mt-10 flex flex-col items-center">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full mb-8">
+                  {capturedImages.map((img, idx) => (
+                    <div key={idx} className="relative group aspect-[3/4] rounded-2xl overflow-hidden shadow-lg border-2 border-white">
+                      <img src={img} className="w-full h-full object-cover" alt={`Capture ${idx}`} />
+                      <button 
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg transform active:scale-90"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] py-1 font-bold">FOTO {idx + 1}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleProcess}
+                  className="w-full max-w-sm bg-blue-600 text-white font-black py-6 rounded-3xl shadow-[0_20px_50px_rgba(37,99,235,0.3)] hover:bg-blue-700 transition transform active:scale-95 uppercase text-xl tracking-widest flex items-center justify-center space-x-3"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <span>PROCESAR TODO</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -202,7 +218,7 @@ const App: React.FC = () => {
                  <div className="h-4 w-4 bg-blue-600 rounded-full animate-ping"></div>
               </div>
             </div>
-            <p className="text-2xl font-black text-gray-900 animate-pulse uppercase italic tracking-tighter">Leyendo presupuesto...</p>
+            <p className="text-2xl font-black text-gray-900 animate-pulse uppercase italic tracking-tighter">Analizando {capturedImages.length} fotos...</p>
             <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.3em]">No cierres la aplicación</p>
           </div>
         )}
@@ -216,7 +232,7 @@ const App: React.FC = () => {
           />
         )}
 
-        {!processing && !capturedImage && (
+        {!processing && capturedImages.length === 0 && !result && (
           <HistoryList 
             items={history} 
             onSelect={handleSelectFromHistory} 
