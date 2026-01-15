@@ -16,6 +16,20 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
   const containerRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  // Lógica de densidad basada en el número de líneas
+  const rowCount = data.lines.length;
+  const isCompact = rowCount > 12;
+  const isUltraCompact = rowCount > 22;
+
+  const styles = {
+    cellPadding: isUltraCompact ? 'p-1' : isCompact ? 'p-1.5' : 'p-3',
+    fontSize: isUltraCompact ? 'text-[9px]' : isCompact ? 'text-[10px]' : 'text-[11px]',
+    headerSize: isUltraCompact ? 'text-lg' : 'text-xl',
+    sectionGap: isUltraCompact ? 'mb-2' : isCompact ? 'mb-4' : 'mb-8',
+    titleSize: isUltraCompact ? 'text-2xl' : isCompact ? 'text-3xl' : 'text-4xl',
+    tableLeading: isUltraCompact ? 'leading-[1.1]' : 'leading-tight'
+  };
+
   useEffect(() => {
     const updateScale = () => {
       if (containerRef.current) {
@@ -115,7 +129,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-6">
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase italic">Vista Previa Profesional</h2>
-          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Plantilla: Lalo Quilis Oficial (v2)</p>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Plantilla: Lalo Quilis Oficial (v2.1 Adaptive)</p>
         </div>
         <div className="flex space-x-3">
           <button 
@@ -138,7 +152,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <span className="font-black text-sm uppercase">DESCARGAR WORD (.DOCX)</span>
+          <span className="font-black text-sm uppercase">WORD (.DOCX)</span>
         </button>
         <button
           onClick={() => handleDownloadPdf(false)}
@@ -166,14 +180,14 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
           <div 
             id="template-preview" 
             ref={previewRef}
-            className="bg-white shadow-2xl p-10 md:p-14 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-[13px] text-black font-sans relative flex flex-col box-border overflow-hidden"
+            className="bg-white shadow-2xl p-10 md:p-12 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-black font-sans relative flex flex-col box-border overflow-hidden"
             style={{ lineHeight: '1.2' }}
           >
             {/* Header Lalo Quilis */}
-            <div className="flex justify-between items-start mb-10">
+            <div className={`flex justify-between items-start ${isUltraCompact ? 'mb-4' : 'mb-8'}`}>
               <div className="flex flex-col">
-                <h2 className="text-xl font-black uppercase tracking-tighter text-gray-900 mb-1">Eduardo Quilis Llorens</h2>
-                <div className="text-[11px] font-bold text-gray-700 space-y-0.5">
+                <h2 className={`${styles.headerSize} font-black uppercase tracking-tighter text-gray-900 mb-1`}>Eduardo Quilis Llorens</h2>
+                <div className={`${isUltraCompact ? 'text-[9px]' : 'text-[11px]'} font-bold text-gray-700 space-y-0.5`}>
                   <p>C/ Cervantes 41 • Onil • 03430</p>
                   <p>quilislalo@gmail.com</p>
                   <p className="text-gray-900 font-black pt-1">Tel: 620-944-229 • NIF: 21667776-M</p>
@@ -181,100 +195,91 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
               </div>
               
               <div className="flex flex-col items-end">
-                <div className="bg-slate-900 text-white p-2.5 rounded-xl flex flex-col items-center w-40 shadow-xl">
+                <div className={`bg-slate-900 text-white p-2 rounded-xl flex flex-col items-center ${isUltraCompact ? 'w-32' : 'w-40'} shadow-xl`}>
                   <div className="flex items-center space-x-2 w-full justify-center">
-                    <div className="text-lg font-black leading-tight tracking-tighter text-center">LALO<br/>QUILIS</div>
-                    <div className="h-8 w-1.5 flex flex-col justify-between">
+                    <div className={`${isUltraCompact ? 'text-sm' : 'text-lg'} font-black leading-tight tracking-tighter text-center`}>LALO<br/>QUILIS</div>
+                    <div className={`${isUltraCompact ? 'h-6' : 'h-8'} w-1.5 flex flex-col justify-between`}>
                         <div className="h-1/3 bg-sky-400"></div>
                         <div className="h-1/3 bg-rose-500"></div>
                         <div className="h-1/3 bg-amber-400"></div>
                     </div>
                   </div>
-                  <div className="text-[7px] mt-1.5 border-t border-white/20 pt-1 tracking-[0.2em] uppercase font-black text-blue-300">Pinturas y Decoración</div>
+                  <div className="text-[7px] mt-1 border-t border-white/20 pt-1 tracking-[0.2em] uppercase font-black text-blue-300">Pinturas y Decoración</div>
                 </div>
               </div>
             </div>
             
-            <div className="text-center mb-6">
-               <h1 className="text-4xl font-black text-slate-800 tracking-[0.1em] uppercase border-b-2 border-slate-800 pb-1 inline-block">PRESUPUESTO</h1>
+            <div className={`text-center ${isUltraCompact ? 'mb-4' : 'mb-6'}`}>
+               <h1 className={`${styles.titleSize} font-black text-slate-800 tracking-[0.1em] uppercase border-b-2 border-slate-800 pb-1 inline-block`}>PRESUPUESTO</h1>
             </div>
 
-            <div className="mb-8 bg-slate-50 p-4 border-2 border-slate-200 rounded-xl flex justify-between items-center shadow-sm">
+            <div className={`${styles.sectionGap} bg-slate-50 p-3 border-2 border-slate-200 rounded-xl flex justify-between items-center shadow-sm`}>
               <div className="flex-1">
-                <p className="text-[9px] uppercase font-black text-slate-400 mb-0.5">PARA EL CLIENTE:</p>
-                <p className="text-[16px] font-black uppercase text-slate-900 underline decoration-slate-400 decoration-2 underline-offset-4">{data.client}</p>
+                <p className="text-[8px] uppercase font-black text-slate-400 mb-0.5">PARA EL CLIENTE:</p>
+                <p className={`${isUltraCompact ? 'text-sm' : 'text-lg'} font-black uppercase text-slate-900 underline decoration-slate-400 decoration-2 underline-offset-4`}>{data.client}</p>
               </div>
               <div className="text-right pl-6 border-l-2 border-slate-200">
-                <p className="text-[9px] uppercase font-black text-slate-400 mb-0.5">FECHA DE EMISIÓN:</p>
-                <p className="text-[14px] font-black text-slate-900">{data.date}</p>
+                <p className="text-[8px] uppercase font-black text-slate-400 mb-0.5">FECHA:</p>
+                <p className={`${isUltraCompact ? 'text-xs' : 'text-sm'} font-black text-slate-900`}>{data.date}</p>
               </div>
             </div>
 
-            {/* Tabla Principal - DINÁMICA: SIN FILAS VACÍAS */}
-            <div className="flex-grow mb-6">
-              <table className="w-full border-collapse border-2 border-slate-900 text-[11px]">
-                <thead>
-                  <tr className="bg-slate-800 text-white uppercase text-[10px] font-black tracking-wider">
-                    <th className="border-2 border-slate-900 p-3 text-left w-[55%]">CONCEPTO / DESCRIPCIÓN</th>
-                    <th className="border-2 border-slate-900 p-3 text-center w-[12%]">UDS.</th>
-                    <th className="border-2 border-slate-900 p-3 text-center w-[15%]">PRECIO U. (€)</th>
-                    <th className="border-2 border-slate-900 p-3 text-center w-[18%] bg-slate-700">TOTAL (€)</th>
+            {/* Tabla Principal Adaptativa */}
+            <div className="flex-grow overflow-hidden flex flex-col">
+              <table className={`w-full border-collapse border-2 border-slate-900 ${styles.fontSize}`}>
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-slate-800 text-white uppercase text-[9px] font-black tracking-wider">
+                    <th className={`border-2 border-slate-900 ${styles.cellPadding} text-left w-[55%]`}>CONCEPTO / DESCRIPCIÓN</th>
+                    <th className={`border-2 border-slate-900 ${styles.cellPadding} text-center w-[12%]`}>UDS.</th>
+                    <th className={`border-2 border-slate-900 ${styles.cellPadding} text-center w-[15%]`}>P. UNIT (€)</th>
+                    <th className={`border-2 border-slate-900 ${styles.cellPadding} text-center w-[18%] bg-slate-700`}>TOTAL (€)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.lines.map((line, i) => (
-                    <tr key={i} className={`leading-tight ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                      <td className="border-2 border-slate-900 p-3 font-bold uppercase text-slate-800">{line.description}</td>
-                      <td className="border-2 border-slate-900 p-3 text-center font-black">{line.units || ''}</td>
-                      <td className="border-2 border-slate-900 p-3 text-right font-black">{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
-                      <td className="border-2 border-slate-900 p-3 text-right font-black bg-slate-100/30">{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
+                    <tr key={i} className={`${styles.tableLeading} ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                      <td className={`border-2 border-slate-900 ${styles.cellPadding} font-bold uppercase text-slate-800`}>{line.description}</td>
+                      <td className={`border-2 border-slate-900 ${styles.cellPadding} text-center font-black`}>{line.units || ''}</td>
+                      <td className={`border-2 border-slate-900 ${styles.cellPadding} text-right font-black`}>{line.unitPrice ? `${line.unitPrice.toFixed(2)}€` : ''}</td>
+                      <td className={`border-2 border-slate-900 ${styles.cellPadding} text-right font-black bg-slate-100/30`}>{line.totalPrice ? `${line.totalPrice.toFixed(2)}€` : ''}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {/* Bloque Totales */}
-            <div className="flex justify-end mb-10">
-              <div className="w-64 space-y-0">
+            {/* Bloque Totales - Se mantiene al final pero se compacta */}
+            <div className={`flex justify-end mt-4 ${styles.sectionGap}`}>
+              <div className={`${isUltraCompact ? 'w-48' : 'w-64'} space-y-0`}>
                 <div className="flex border-2 border-slate-900 border-b-0">
-                  <div className="w-1/2 p-2 font-black bg-slate-50 text-[10px] uppercase">Base Imponible</div>
-                  <div className="w-1/2 p-2 font-black text-right border-l-2 border-slate-900 text-[13px]">{data.subtotal.toFixed(2)}€</div>
+                  <div className={`w-1/2 ${styles.cellPadding} font-black bg-slate-50 text-[9px] uppercase`}>Base Imp.</div>
+                  <div className={`w-1/2 ${styles.cellPadding} font-black text-right border-l-2 border-slate-900 ${isUltraCompact ? 'text-[11px]' : 'text-[13px]'}`}>{data.subtotal.toFixed(2)}€</div>
                 </div>
                 
                 <div className="flex border-2 border-slate-900 border-b-0">
-                  <div className="w-1/2 p-2 font-black bg-slate-50 text-[10px] uppercase text-slate-500">I.V.A. (21%)</div>
-                  <div className="w-1/2 p-2 font-black text-right border-l-2 border-slate-900 text-[13px] text-slate-500">{data.iva.toFixed(2)}€</div>
+                  <div className={`w-1/2 ${styles.cellPadding} font-black bg-slate-50 text-[9px] uppercase text-slate-500`}>IVA (21%)</div>
+                  <div className={`w-1/2 ${styles.cellPadding} font-black text-right border-l-2 border-slate-900 ${isUltraCompact ? 'text-[11px]' : 'text-[13px]'} text-slate-500`}>{data.iva.toFixed(2)}€</div>
                 </div>
                 
-                <div className="flex border-2 border-slate-900 bg-slate-900 text-white transform scale-105 shadow-2xl">
-                  <div className="w-1/2 p-3 font-black uppercase text-[12px] tracking-widest flex items-center">TOTAL NETO</div>
-                  <div className="w-1/2 p-3 font-black text-right border-l-2 border-white/20 text-[18px]">{data.total.toFixed(2)}€</div>
+                <div className="flex border-2 border-slate-900 bg-slate-900 text-white shadow-xl">
+                  <div className={`w-1/2 ${styles.cellPadding} font-black uppercase text-[10px] tracking-widest flex items-center`}>TOTAL</div>
+                  <div className={`w-1/2 ${styles.cellPadding} font-black text-right border-l-2 border-white/20 ${isUltraCompact ? 'text-lg' : 'text-xl'}`}>{data.total.toFixed(2)}€</div>
                 </div>
               </div>
             </div>
 
-            {/* Clausulas */}
-            <div className="mt-auto border-t-2 border-slate-900 pt-6">
-              <h3 className="font-black italic underline mb-2 text-[12px] text-slate-900 uppercase">NOTAS IMPORTANTES:</h3>
-              <ul className="space-y-1 text-[10px] font-bold text-slate-700">
-                <li className="flex items-start">
-                  <span className="mr-2 text-slate-900 font-black">1.</span>
-                  <span>Cualquier imprevisto o defecto oculto detectado durante la ejecución se facturará de forma independiente.</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2 text-slate-900 font-black">2.</span>
-                  <span>Tratamientos especiales por mal estado de paramentos no incluidos en este presupuesto inicial.</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2 text-slate-900 font-black">3.</span>
-                  <span>Forma de pago: 50% a la aceptación/inicio de trabajos y 50% a la finalización de los mismos.</span>
-                </li>
-              </ul>
+            {/* Clausulas Compactadas */}
+            <div className={`${isUltraCompact ? 'mt-0 border-t' : 'mt-auto border-t-2'} border-slate-900 pt-3`}>
+              <h3 className={`font-black italic underline mb-1 ${isUltraCompact ? 'text-[10px]' : 'text-[11px]'} text-slate-900 uppercase`}>NOTAS:</h3>
+              <div className={`grid ${isUltraCompact ? 'grid-cols-2 gap-x-4' : 'grid-cols-1'} ${isUltraCompact ? 'text-[8px]' : 'text-[9px]'} font-bold text-slate-600`}>
+                <p>• Imprevistos se facturarán aparte.</p>
+                <p>• Paramentos en mal estado no incluidos.</p>
+                <p>• Pago: 50% inicio / 50% fin.</p>
+              </div>
             </div>
 
-            <div className="pt-8 text-center mt-4">
-              <p className="text-[8px] text-slate-300 uppercase tracking-[0.5em] font-black">Powered by SantiSystems</p>
+            <div className="pt-4 text-center">
+              <p className="text-[7px] text-slate-300 uppercase tracking-[0.4em] font-black">SantiSystems Optic Engine</p>
             </div>
           </div>
         </div>
