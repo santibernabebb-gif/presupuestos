@@ -129,7 +129,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-100 pb-6">
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase italic">Vista Previa Profesional</h2>
-          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Plantilla: Lalo Quilis Oficial (v2.1 Adaptive)</p>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Plantilla: Lalo Quilis Oficial (v2.2 Original)</p>
         </div>
         <div className="flex space-x-3">
           <button 
@@ -183,7 +183,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
             className="bg-white shadow-2xl p-10 md:p-12 w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] text-black font-sans relative flex flex-col box-border overflow-hidden"
             style={{ lineHeight: '1.2' }}
           >
-            {/* Header Lalo Quilis */}
+            {/* Cabecera idéntica a la plantilla real */}
             <div className={`flex justify-between items-start ${isUltraCompact ? 'mb-4' : 'mb-8'}`}>
               <div className="flex flex-col">
                 <h2 className={`${styles.headerSize} font-black uppercase tracking-tighter text-gray-900 mb-1`}>Eduardo Quilis Llorens</h2>
@@ -213,6 +213,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
                <h1 className={`${styles.titleSize} font-black text-slate-800 tracking-[0.1em] uppercase border-b-2 border-slate-800 pb-1 inline-block`}>PRESUPUESTO</h1>
             </div>
 
+            {/* Recuadro de Cliente */}
             <div className={`${styles.sectionGap} bg-slate-50 p-3 border-2 border-slate-200 rounded-xl flex justify-between items-center shadow-sm`}>
               <div className="flex-1">
                 <p className="text-[8px] uppercase font-black text-slate-400 mb-0.5">PARA EL CLIENTE:</p>
@@ -224,7 +225,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
               </div>
             </div>
 
-            {/* Tabla Principal Adaptativa */}
+            {/* Tabla Principal */}
             <div className="flex-grow overflow-hidden flex flex-col">
               <table className={`w-full border-collapse border-2 border-slate-900 ${styles.fontSize}`}>
                 <thead className="sticky top-0 z-10">
@@ -248,7 +249,7 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
               </table>
             </div>
 
-            {/* Bloque Totales - Se mantiene al final pero se compacta */}
+            {/* Totales */}
             <div className={`flex justify-end mt-4 ${styles.sectionGap}`}>
               <div className={`${isUltraCompact ? 'w-48' : 'w-64'} space-y-0`}>
                 <div className="flex border-2 border-slate-900 border-b-0">
@@ -268,13 +269,13 @@ const ResultView: React.FC<Props> = ({ data, onReset, autoDownload, onAutoDownlo
               </div>
             </div>
 
-            {/* Clausulas Compactadas */}
-            <div className={`${isUltraCompact ? 'mt-0 border-t' : 'mt-auto border-t-2'} border-slate-900 pt-3`}>
-              <h3 className={`font-black italic underline mb-1 ${isUltraCompact ? 'text-[10px]' : 'text-[11px]'} text-slate-900 uppercase`}>NOTAS:</h3>
-              <div className={`grid ${isUltraCompact ? 'grid-cols-2 gap-x-4' : 'grid-cols-1'} ${isUltraCompact ? 'text-[8px]' : 'text-[9px]'} font-bold text-slate-600`}>
-                <p>• Imprevistos se facturarán aparte.</p>
-                <p>• Paramentos en mal estado no incluidos.</p>
-                <p>• Pago: 50% inicio / 50% fin.</p>
+            {/* NOTAS: Se mantienen idénticas a la plantilla original (Lista vertical) */}
+            <div className={`mt-auto border-t-2 border-slate-900 pt-3`}>
+              <h3 className={`font-black italic underline mb-1 ${isUltraCompact ? 'text-[9px]' : 'text-[11px]'} text-slate-900 uppercase`}>NOTAS:</h3>
+              <div className={`${isUltraCompact ? 'text-[8px] space-y-0' : 'text-[9px] space-y-0.5'} font-bold text-slate-700`}>
+                <p>• Los trabajos imprevistos no contemplados en este presupuesto se facturarán aparte.</p>
+                <p>• El saneamiento de paramentos en mal estado (grietas ocultas, humedades) no está incluido.</p>
+                <p>• Forma de pago: 50% al inicio de los trabajos y el restante 50% a la finalización de los mismos.</p>
               </div>
             </div>
 

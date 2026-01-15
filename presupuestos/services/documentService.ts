@@ -120,7 +120,10 @@ export const generateDocx = async (data: BudgetData): Promise<Blob> => {
         }),
 
         new Paragraph({ spacing: { before: isCompact ? 200 : 400 } }),
-        new Paragraph({ children: [new TextRun({ text: "NOTAS: 1. Imprevistos aparte. 2. Forma de pago: 50% inicio / 50% fin.", size: 12, bold: true })] }),
+        new Paragraph({ children: [new TextRun({ text: "NOTAS:", bold: true, underline: {}, size: 14 })] }),
+        new Paragraph({ spacing: { before: 50 }, children: [new TextRun({ text: "• Los trabajos imprevistos no contemplados se facturarán aparte.", size: 12 })] }),
+        new Paragraph({ spacing: { before: 50 }, children: [new TextRun({ text: "• El saneamiento de paramentos en mal estado no está incluido.", size: 12 })] }),
+        new Paragraph({ spacing: { before: 50 }, children: [new TextRun({ text: "• Forma de pago: 50% al inicio / 50% a la finalización.", size: 12 })] }),
       ],
     }],
   });
